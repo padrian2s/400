@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>400 Influential Figures — World Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:Inter,system-ui,sans-serif;background:#0f1117;color:#e0e0e6}
+  #map{width:100%;height:100vh}
+  .header{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:1000;
+    background:rgba(15,17,23,.88);backdrop-filter:blur(12px);border:1px solid #2a2d3a;
+    border-top:none;border-radius:0 0 12px 12px;padding:10px 24px;text-align:center;
+    pointer-events:none}
+  .header h1{font-size:1.1rem;font-weight:700;letter-spacing:-.01em}
+  .header h1 span{color:#6c8aff}
+  .header p{font-size:.75rem;color:#8b8fa3;margin-top:2px}
+  /* Legend */
+  .legend{position:fixed;bottom:20px;left:20px;z-index:1000;
+    background:rgba(15,17,23,.92);backdrop-filter:blur(12px);border:1px solid #2a2d3a;
+    border-radius:12px;padding:14px 16px;max-height:60vh;overflow-y:auto;
+    font-size:.72rem;width:280px;scrollbar-width:thin;scrollbar-color:#2a2d3a transparent}
+  .legend h3{font-size:.8rem;font-weight:700;margin-bottom:8px;color:#6c8aff}
+  .legend-item{display:flex;align-items:center;gap:8px;padding:3px 0;cursor:pointer;
+    opacity:.9;transition:opacity .15s}
+  .legend-item:hover{opacity:1}
+  .legend-item.dimmed{opacity:.25}
+  .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .legend-label{color:#c0c0c8;line-height:1.3}
+  .legend-count{color:#8b8fa3;margin-left:auto;flex-shrink:0}
+  /* Info panel */
+  .info-panel{position:fixed;top:60px;right:20px;z-index:1000;
+    background:rgba(15,17,23,.92);backdrop-filter:blur(12px);border:1px solid #2a2d3a;
+    border-radius:12px;padding:14px 16px;font-size:.8rem;width:260px;display:none}
+  .info-panel h4{font-size:.9rem;margin-bottom:4px}
+  .info-panel .cat{color:#8b8fa3;font-size:.72rem;margin-bottom:6px}
+  .info-panel .coords{color:#555;font-size:.65rem}
+  /* Custom popup */
+  .leaflet-popup-content-wrapper{background:rgba(26,29,39,.95)!important;color:#e0e0e6!important;
+    border:1px solid #2a2d3a!important;border-radius:10px!important;box-shadow:0 8px 32px rgba(0,0,0,.5)!important}
+  .leaflet-popup-tip{background:rgba(26,29,39,.95)!important;border:1px solid #2a2d3a!important}
+  .leaflet-popup-content{margin:10px 14px!important;font-family:Inter,system-ui,sans-serif!important;font-size:.85rem!important}
+  .leaflet-popup-content b{color:#6c8aff}
+  .leaflet-popup-content .pop-cat{color:#8b8fa3;font-size:.72rem;margin-top:2px}
+  /* Counter */
+  .counter{position:fixed;top:0;right:20px;z-index:1000;
+    background:rgba(15,17,23,.88);backdrop-filter:blur(12px);border:1px solid #2a2d3a;
+    border-top:none;border-radius:0 0 10px 10px;padding:8px 16px;font-size:.75rem;color:#8b8fa3}
+  .counter span{color:#6c8aff;font-weight:700;font-size:.9rem}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span>400</span> Influential Figures — World Map</h1>
+  <p>Click a category in the legend to toggle visibility</p>
+</div>
+<div class="counter">Showing <span id="visCount">400</span> / 400</div>
+<div id="map"></div>
+<div class="legend" id="legend"><h3>Categories</h3></div>
+
+<script>
+// ── Category colors ──
+const CAT_COLORS = {
+  "1) Ancient Mediterranean (Greece/Rome)": "#e06c75",
+  "2) Ancient Near East & Egypt": "#d19a66",
+  "3) Classical South Asia (incl. early medieval)": "#e5c07b",
+  "4) Classical East Asia (China/Korea/Japan)": "#98c379",
+  "5) Africa (pre-1800 kingdoms, scholarship, empires)": "#56b6c2",
+  "6) Indigenous Americas (pre-1900)": "#c678dd",
+  "7) Medieval Europe": "#61afef",
+  "8) Islamic World (600–1500)": "#be5046",
+  "9) East Asia (900–1700)": "#7ec89b",
+  "10) South & Southeast Asia (1000–1700)": "#d4a33e",
+  "11) Renaissance & Early Modern Europe (1400–1650)": "#e86e8a",
+  "12) Scientific Revolution & Enlightenment (1600–1800)": "#6c8aff",
+  "13) Revolutions & Statecraft (1700–1900)": "#c0a0ff",
+  "14) Industrial Age Science & Engineering (1750–1900)": "#4dc9f6",
+  "15) Science & Technology (1900–1950)": "#f67019",
+  "16) Computing & Internet (1950–present)": "#00d4aa",
+  "17) Politics & Power (1900–present)": "#ff6384",
+  "18) Social Movements & Human Rights": "#ffcd56",
+  "19) Literature & Visual Arts (1800–present)": "#9966ff",
+  "20) Music, Film & Popular Culture": "#ff9f40"
+};
+
+// ── All 400 figures: [name, category, lat, lng] ──
+const DATA = [
+// 1) Ancient Mediterranean
+["Homer","1) Ancient Mediterranean (Greece/Rome)",38.4,-26.1],
+["Sappho","1) Ancient Mediterranean (Greece/Rome)",39.17,26.33],
+["Socrates","1) Ancient Mediterranean (Greece/Rome)",37.97,23.72],
+["Plato","1) Ancient Mediterranean (Greece/Rome)",37.97,23.73],
+["Aristotle","1) Ancient Mediterranean (Greece/Rome)",40.52,23.55],
+["Alexander the Great","1) Ancient Mediterranean (Greece/Rome)",40.62,22.96],
+["Archimedes","1) Ancient Mediterranean (Greece/Rome)",37.07,15.29],
+["Euclid","1) Ancient Mediterranean (Greece/Rome)",31.2,29.92],
+["Hippocrates","1) Ancient Mediterranean (Greece/Rome)",36.85,27.05],
+["Herodotus","1) Ancient Mediterranean (Greece/Rome)",37.52,27.18],
+["Thucydides","1) Ancient Mediterranean (Greece/Rome)",37.98,23.74],
+["Pericles","1) Ancient Mediterranean (Greece/Rome)",37.96,23.73],
+["Julius Caesar","1) Ancient Mediterranean (Greece/Rome)",41.9,12.5],
+["Cicero","1) Ancient Mediterranean (Greece/Rome)",41.69,13.34],
+["Augustus","1) Ancient Mediterranean (Greece/Rome)",41.89,12.48],
+["Virgil","1) Ancient Mediterranean (Greece/Rome)",45.16,10.79],
+["Ovid","1) Ancient Mediterranean (Greece/Rome)",42.08,13.73],
+["Seneca","1) Ancient Mediterranean (Greece/Rome)",37.88,-4.77],
+["Marcus Aurelius","1) Ancient Mediterranean (Greece/Rome)",41.91,12.49],
+["Cleopatra VII","1) Ancient Mediterranean (Greece/Rome)",31.2,29.9],
+
+// 2) Ancient Near East & Egypt
+["Sargon of Akkad","2) Ancient Near East & Egypt",33.1,44.1],
+["Hammurabi","2) Ancient Near East & Egypt",32.54,44.42],
+["Ashurbanipal","2) Ancient Near East & Egypt",36.36,43.15],
+["Nebuchadnezzar II","2) Ancient Near East & Egypt",32.54,44.42],
+["Nabonidus","2) Ancient Near East & Egypt",32.53,44.41],
+["Cyrus the Great","2) Ancient Near East & Egypt",29.93,52.89],
+["Darius I","2) Ancient Near East & Egypt",29.93,52.9],
+["Xerxes I","2) Ancient Near East & Egypt",29.94,52.88],
+["Zoroaster","2) Ancient Near East & Egypt",36.7,53.0],
+["Hatshepsut","2) Ancient Near East & Egypt",25.74,32.6],
+["Akhenaten","2) Ancient Near East & Egypt",27.65,30.9],
+["Ramesses II","2) Ancient Near East & Egypt",25.73,32.6],
+["Tutankhamun","2) Ancient Near East & Egypt",25.74,32.61],
+["Imhotep","2) Ancient Near East & Egypt",29.87,31.22],
+["Cleopatra I","2) Ancient Near East & Egypt",31.2,29.91],
+["Solomon","2) Ancient Near East & Egypt",31.77,35.23],
+["Ezra","2) Ancient Near East & Egypt",31.78,35.22],
+["Nehemiah","2) Ancient Near East & Egypt",31.76,35.24],
+["Jesus of Nazareth","2) Ancient Near East & Egypt",32.7,35.3],
+["Paul the Apostle","2) Ancient Near East & Egypt",36.85,36.95],
+
+// 3) Classical South Asia
+["Gautama Buddha","3) Classical South Asia (incl. early medieval)",27.48,83.28],
+["Mahavira","3) Classical South Asia (incl. early medieval)",25.36,85.14],
+["Chanakya (Kautilya)","3) Classical South Asia (incl. early medieval)",25.61,85.14],
+["Chandragupta Maurya","3) Classical South Asia (incl. early medieval)",25.6,85.1],
+["Ashoka the Great","3) Classical South Asia (incl. early medieval)",25.62,85.12],
+["Kanishka","3) Classical South Asia (incl. early medieval)",34.01,71.58],
+["Chandragupta II (Vikramaditya)","3) Classical South Asia (incl. early medieval)",25.44,81.85],
+["Samudragupta","3) Classical South Asia (incl. early medieval)",25.43,81.84],
+["Harsha","3) Classical South Asia (incl. early medieval)",30.38,76.78],
+["Kalidasa","3) Classical South Asia (incl. early medieval)",23.26,77.41],
+["Panini","3) Classical South Asia (incl. early medieval)",34.75,71.78],
+["Patanjali","3) Classical South Asia (incl. early medieval)",26.85,80.91],
+["Aryabhata","3) Classical South Asia (incl. early medieval)",25.6,85.1],
+["Brahmagupta","3) Classical South Asia (incl. early medieval)",24.59,72.72],
+["Bhaskaracharya (Bhaskara II)","3) Classical South Asia (incl. early medieval)",17.79,75.94],
+["Charaka","3) Classical South Asia (incl. early medieval)",27.18,78.02],
+["Sushruta","3) Classical South Asia (incl. early medieval)",25.32,83.01],
+["Nagarjuna","3) Classical South Asia (incl. early medieval)",16.51,79.45],
+["Bharata Muni","3) Classical South Asia (incl. early medieval)",25.3,83.0],
+["Ashvaghosha","3) Classical South Asia (incl. early medieval)",26.45,80.35],
+
+// 4) Classical East Asia
+["Confucius","4) Classical East Asia (China/Korea/Japan)",35.6,116.99],
+["Laozi","4) Classical East Asia (China/Korea/Japan)",33.87,115.78],
+["Mozi","4) Classical East Asia (China/Korea/Japan)",35.41,116.58],
+["Mencius","4) Classical East Asia (China/Korea/Japan)",35.56,116.97],
+["Sun Tzu","4) Classical East Asia (China/Korea/Japan)",31.3,120.62],
+["Qin Shi Huang","4) Classical East Asia (China/Korea/Japan)",34.27,108.94],
+["Han Wudi (Emperor Wu of Han)","4) Classical East Asia (China/Korea/Japan)",34.26,108.94],
+["Sima Qian","4) Classical East Asia (China/Korea/Japan)",35.47,109.47],
+["Zhang Qian","4) Classical East Asia (China/Korea/Japan)",33.07,107.03],
+["Cai Lun","4) Classical East Asia (China/Korea/Japan)",26.42,112.55],
+["Zhang Heng","4) Classical East Asia (China/Korea/Japan)",33.75,113.65],
+["Wang Mang","4) Classical East Asia (China/Korea/Japan)",34.26,108.95],
+["Wang Xizhi","4) Classical East Asia (China/Korea/Japan)",30.25,120.17],
+["Empress Wu Zetian","4) Classical East Asia (China/Korea/Japan)",34.75,104.75],
+["Xuanzang","4) Classical East Asia (China/Korea/Japan)",34.72,113.65],
+["Li Bai","4) Classical East Asia (China/Korea/Japan)",31.47,104.75],
+["Du Fu","4) Classical East Asia (China/Korea/Japan)",34.75,113.65],
+["Han Fei","4) Classical East Asia (China/Korea/Japan)",33.95,116.67],
+["Genghis Khan","4) Classical East Asia (China/Korea/Japan)",48.2,107.0],
+["Prince Shotoku","4) Classical East Asia (China/Korea/Japan)",34.69,135.81],
+
+// 5) Africa
+["Hannibal Barca","5) Africa (pre-1800 kingdoms, scholarship, empires)",36.86,10.32],
+["Dido (Elissa)","5) Africa (pre-1800 kingdoms, scholarship, empires)",36.85,10.33],
+["Piye (Piankhi)","5) Africa (pre-1800 kingdoms, scholarship, empires)",18.53,31.82],
+["Taharqa","5) Africa (pre-1800 kingdoms, scholarship, empires)",18.54,31.83],
+["Amanirenas","5) Africa (pre-1800 kingdoms, scholarship, empires)",16.93,33.75],
+["Ezana of Axum","5) Africa (pre-1800 kingdoms, scholarship, empires)",14.13,38.72],
+["Kaleb of Axum","5) Africa (pre-1800 kingdoms, scholarship, empires)",14.14,38.73],
+["Sundiata Keita","5) Africa (pre-1800 kingdoms, scholarship, empires)",12.65,-8.0],
+["Mansa Musa","5) Africa (pre-1800 kingdoms, scholarship, empires)",12.65,-7.99],
+["Sonni Ali","5) Africa (pre-1800 kingdoms, scholarship, empires)",16.27,-0.05],
+["Askia Muhammad I","5) Africa (pre-1800 kingdoms, scholarship, empires)",16.27,-0.04],
+["Ibn Khaldun","5) Africa (pre-1800 kingdoms, scholarship, empires)",36.8,10.18],
+["Ibn Battuta","5) Africa (pre-1800 kingdoms, scholarship, empires)",35.78,-5.81],
+["Ahmad ibn Ibrahim al-Ghazi","5) Africa (pre-1800 kingdoms, scholarship, empires)",9.02,38.75],
+["Ahmed Baba","5) Africa (pre-1800 kingdoms, scholarship, empires)",16.77,-3.01],
+["Oba Ewuare (Benin)","5) Africa (pre-1800 kingdoms, scholarship, empires)",6.34,5.63],
+["Osei Tutu","5) Africa (pre-1800 kingdoms, scholarship, empires)",6.7,-1.62],
+["Queen Nzinga","5) Africa (pre-1800 kingdoms, scholarship, empires)",-8.84,13.23],
+["Afonso I of Kongo","5) Africa (pre-1800 kingdoms, scholarship, empires)",-6.27,14.24],
+["Shaka Zulu","5) Africa (pre-1800 kingdoms, scholarship, empires)",-28.73,31.1],
+
+// 6) Indigenous Americas
+["K'inich Janaab' Pakal (Pakal the Great)","6) Indigenous Americas (pre-1900)",17.48,-92.05],
+["Lady Six Sky","6) Indigenous Americas (pre-1900)",17.22,-89.62],
+["Nezahualcoyotl","6) Indigenous Americas (pre-1900)",19.51,-98.88],
+["Itzcoatl","6) Indigenous Americas (pre-1900)",19.43,-99.13],
+["Moctezuma I","6) Indigenous Americas (pre-1900)",19.43,-99.14],
+["Moctezuma II","6) Indigenous Americas (pre-1900)",19.44,-99.13],
+["Cuitlahuac","6) Indigenous Americas (pre-1900)",19.35,-99.07],
+["Cuauhtemoc","6) Indigenous Americas (pre-1900)",19.43,-99.12],
+["Pachacuti","6) Indigenous Americas (pre-1900)",-13.52,-71.97],
+["Topa Inca Yupanqui","6) Indigenous Americas (pre-1900)",-13.53,-71.97],
+["Huayna Capac","6) Indigenous Americas (pre-1900)",-13.52,-71.98],
+["Atahualpa","6) Indigenous Americas (pre-1900)",-1.67,-78.65],
+["Manco Inca","6) Indigenous Americas (pre-1900)",-13.17,-72.54],
+["Tlacaelel","6) Indigenous Americas (pre-1900)",19.43,-99.15],
+["Tecumseh","6) Indigenous Americas (pre-1900)",39.75,-83.95],
+["Hiawatha","6) Indigenous Americas (pre-1900)",42.85,-76.0],
+["Popé","6) Indigenous Americas (pre-1900)",35.99,-106.07],
+["Sequoyah","6) Indigenous Americas (pre-1900)",35.47,-84.02],
+["Sitting Bull","6) Indigenous Americas (pre-1900)",46.2,-100.8],
+["Geronimo","6) Indigenous Americas (pre-1900)",32.73,-109.25],
+
+// 7) Medieval Europe
+["Charlemagne","7) Medieval Europe",50.77,6.08],
+["Alfred the Great","7) Medieval Europe",51.06,-1.31],
+["William the Conqueror","7) Medieval Europe",49.18,-0.37],
+["Eleanor of Aquitaine","7) Medieval Europe",44.35,0.43],
+["Hildegard of Bingen","7) Medieval Europe",49.97,7.9],
+["Pope Gregory VII","7) Medieval Europe",42.65,12.64],
+["Pope Innocent III","7) Medieval Europe",41.9,12.45],
+["Thomas Aquinas","7) Medieval Europe",41.46,13.75],
+["Anselm of Canterbury","7) Medieval Europe",51.28,1.08],
+["Peter Abelard","7) Medieval Europe",47.35,-0.87],
+["Geoffrey Chaucer","7) Medieval Europe",51.51,-0.13],
+["Dante Alighieri","7) Medieval Europe",43.77,11.25],
+["Giotto","7) Medieval Europe",43.85,11.35],
+["Joan of Arc","7) Medieval Europe",48.51,5.59],
+["Frederick II, Holy Roman Emperor","7) Medieval Europe",43.62,13.52],
+["Philip II of France","7) Medieval Europe",48.86,2.35],
+["Richard the Lionheart","7) Medieval Europe",47.38,0.69],
+["Isabella I of Castile","7) Medieval Europe",41.65,-4.73],
+["Jan Hus","7) Medieval Europe",50.08,14.42],
+["Christine de Pizan","7) Medieval Europe",45.07,7.69],
+
+// 8) Islamic World
+["Muhammad","8) Islamic World (600–1500)",21.42,39.83],
+["Abu Bakr","8) Islamic World (600–1500)",21.43,39.82],
+["Umar ibn al-Khattab","8) Islamic World (600–1500)",21.43,39.84],
+["Uthman ibn Affan","8) Islamic World (600–1500)",21.42,39.85],
+["Ali ibn Abi Talib","8) Islamic World (600–1500)",21.44,39.83],
+["Aisha bint Abu Bakr","8) Islamic World (600–1500)",24.47,39.61],
+["Al-Mansur","8) Islamic World (600–1500)",33.31,44.37],
+["Harun al-Rashid","8) Islamic World (600–1500)",33.32,44.38],
+["Al-Khwarizmi","8) Islamic World (600–1500)",33.33,44.39],
+["Al-Razi (Rhazes)","8) Islamic World (600–1500)",35.6,51.42],
+["Ibn Sina (Avicenna)","8) Islamic World (600–1500)",38.57,66.96],
+["Ibn al-Haytham","8) Islamic World (600–1500)",32.62,44.02],
+["Al-Biruni","8) Islamic World (600–1500)",41.55,60.63],
+["Al-Ghazali","8) Islamic World (600–1500)",36.27,59.57],
+["Ibn Rushd (Averroes)","8) Islamic World (600–1500)",37.88,-4.78],
+["Al-Idrisi","8) Islamic World (600–1500)",35.89,-5.31],
+["Omar Khayyam","8) Islamic World (600–1500)",36.21,59.61],
+["Rumi","8) Islamic World (600–1500)",37.87,30.28],
+["Ibn Arabi","8) Islamic World (600–1500)",37.39,-5.98],
+["Saladin","8) Islamic World (600–1500)",36.19,44.01],
+
+// 9) East Asia 900-1700
+["Zhu Xi","9) East Asia (900–1700)",27.73,118.33],
+["Shen Kuo","9) East Asia (900–1700)",30.25,120.17],
+["Su Song","9) East Asia (900–1700)",24.87,118.68],
+["Wang Anshi","9) East Asia (900–1700)",28.68,115.89],
+["Wang Yangming","9) East Asia (900–1700)",29.87,121.54],
+["Kublai Khan","9) East Asia (900–1700)",39.92,116.39],
+["Hongwu Emperor","9) East Asia (900–1700)",32.81,117.23],
+["Yongle Emperor","9) East Asia (900–1700)",39.92,116.4],
+["Zheng He","9) East Asia (900–1700)",25.04,102.71],
+["Li Shizhen","9) East Asia (900–1700)",30.44,115.04],
+["Sejong the Great","9) East Asia (900–1700)",37.57,126.98],
+["Jang Yeong-sil","9) East Asia (900–1700)",35.18,129.08],
+["Yi Sun-sin","9) East Asia (900–1700)",37.57,126.97],
+["Murasaki Shikibu","9) East Asia (900–1700)",35.01,135.77],
+["Sei Shonagon","9) East Asia (900–1700)",35.02,135.76],
+["Zeami Motokiyo","9) East Asia (900–1700)",34.69,135.5],
+["Ashikaga Yoshimitsu","9) East Asia (900–1700)",35.04,135.73],
+["Oda Nobunaga","9) East Asia (900–1700)",35.18,136.91],
+["Toyotomi Hideyoshi","9) East Asia (900–1700)",35.18,136.92],
+["Tokugawa Ieyasu","9) East Asia (900–1700)",34.97,137.17],
+
+// 10) South & Southeast Asia 1000-1700
+["Rajaraja Chola I","10) South & Southeast Asia (1000–1700)",10.79,79.14],
+["Rajendra Chola I","10) South & Southeast Asia (1000–1700)",10.79,79.15],
+["Jayavarman VII","10) South & Southeast Asia (1000–1700)",13.44,103.86],
+["Suryavarman II","10) South & Southeast Asia (1000–1700)",13.41,103.87],
+["Gajah Mada","10) South & Southeast Asia (1000–1700)",-7.27,112.75],
+["Hayam Wuruk","10) South & Southeast Asia (1000–1700)",-7.26,112.74],
+["Parameswara","10) South & Southeast Asia (1000–1700)",2.19,102.25],
+["Trần Hưng Đạo","10) South & Southeast Asia (1000–1700)",21.03,105.85],
+["Lê Lợi","10) South & Southeast Asia (1000–1700)",19.81,105.78],
+["Nguyễn Trãi","10) South & Southeast Asia (1000–1700)",21.03,105.84],
+["Alauddin Khalji","10) South & Southeast Asia (1000–1700)",28.63,77.22],
+["Babur","10) South & Southeast Asia (1000–1700)",39.65,66.96],
+["Akbar","10) South & Southeast Asia (1000–1700)",27.18,78.02],
+["Jahangir","10) South & Southeast Asia (1000–1700)",27.17,78.03],
+["Shah Jahan","10) South & Southeast Asia (1000–1700)",27.17,78.04],
+["Aurangzeb","10) South & Southeast Asia (1000–1700)",27.18,78.01],
+["Shivaji","10) South & Southeast Asia (1000–1700)",18.52,73.86],
+["Rani Durgavati","10) South & Southeast Asia (1000–1700)",23.18,79.98],
+["Kabir","10) South & Southeast Asia (1000–1700)",25.32,83.01],
+["Guru Nanak","10) South & Southeast Asia (1000–1700)",31.58,74.31],
+
+// 11) Renaissance Europe
+["Johannes Gutenberg","11) Renaissance & Early Modern Europe (1400–1650)",50.0,8.27],
+["Leonardo da Vinci","11) Renaissance & Early Modern Europe (1400–1650)",43.78,11.07],
+["Michelangelo","11) Renaissance & Early Modern Europe (1400–1650)",43.56,11.99],
+["Raphael","11) Renaissance & Early Modern Europe (1400–1650)",43.72,12.64],
+["Sandro Botticelli","11) Renaissance & Early Modern Europe (1400–1650)",43.77,11.25],
+["Titian","11) Renaissance & Early Modern Europe (1400–1650)",46.45,12.21],
+["Albrecht Dürer","11) Renaissance & Early Modern Europe (1400–1650)",49.45,11.08],
+["Niccolò Machiavelli","11) Renaissance & Early Modern Europe (1400–1650)",43.77,11.26],
+["Erasmus","11) Renaissance & Early Modern Europe (1400–1650)",51.92,4.48],
+["Thomas More","11) Renaissance & Early Modern Europe (1400–1650)",51.51,-0.12],
+["Martin Luther","11) Renaissance & Early Modern Europe (1400–1650)",51.86,11.56],
+["John Calvin","11) Renaissance & Early Modern Europe (1400–1650)",49.53,3.62],
+["Ignatius of Loyola","11) Renaissance & Early Modern Europe (1400–1650)",43.18,-2.42],
+["Teresa of Ávila","11) Renaissance & Early Modern Europe (1400–1650)",40.66,-4.7],
+["Elizabeth I","11) Renaissance & Early Modern Europe (1400–1650)",51.5,-0.08],
+["Henry VIII","11) Renaissance & Early Modern Europe (1400–1650)",51.48,-0.6],
+["Catherine de' Medici","11) Renaissance & Early Modern Europe (1400–1650)",43.77,11.25],
+["William Shakespeare","11) Renaissance & Early Modern Europe (1400–1650)",52.19,-1.71],
+["Miguel de Cervantes","11) Renaissance & Early Modern Europe (1400–1650)",40.48,-3.36],
+["Francis Bacon","11) Renaissance & Early Modern Europe (1400–1650)",51.52,-0.11],
+
+// 12) Scientific Revolution
+["Galileo Galilei","12) Scientific Revolution & Enlightenment (1600–1800)",43.72,10.4],
+["Johannes Kepler","12) Scientific Revolution & Enlightenment (1600–1800)",48.78,9.62],
+["René Descartes","12) Scientific Revolution & Enlightenment (1600–1800)",46.97,0.7],
+["Blaise Pascal","12) Scientific Revolution & Enlightenment (1600–1800)",45.78,3.08],
+["Robert Boyle","12) Scientific Revolution & Enlightenment (1600–1800)",52.14,-7.84],
+["Christiaan Huygens","12) Scientific Revolution & Enlightenment (1600–1800)",52.08,4.3],
+["Robert Hooke","12) Scientific Revolution & Enlightenment (1600–1800)",50.67,-1.27],
+["Isaac Newton","12) Scientific Revolution & Enlightenment (1600–1800)",52.88,-0.65],
+["Gottfried Wilhelm Leibniz","12) Scientific Revolution & Enlightenment (1600–1800)",52.37,9.74],
+["Baruch Spinoza","12) Scientific Revolution & Enlightenment (1600–1800)",52.37,4.9],
+["John Locke","12) Scientific Revolution & Enlightenment (1600–1800)",51.0,-3.1],
+["David Hume","12) Scientific Revolution & Enlightenment (1600–1800)",55.95,-3.19],
+["Voltaire","12) Scientific Revolution & Enlightenment (1600–1800)",48.86,2.34],
+["Jean-Jacques Rousseau","12) Scientific Revolution & Enlightenment (1600–1800)",46.2,6.15],
+["Montesquieu","12) Scientific Revolution & Enlightenment (1600–1800)",44.84,-0.58],
+["Immanuel Kant","12) Scientific Revolution & Enlightenment (1600–1800)",54.71,20.51],
+["Adam Smith","12) Scientific Revolution & Enlightenment (1600–1800)",56.12,-3.15],
+["Antoine Lavoisier","12) Scientific Revolution & Enlightenment (1600–1800)",48.85,2.35],
+["Carl Linnaeus","12) Scientific Revolution & Enlightenment (1600–1800)",59.86,17.64],
+["Mary Wollstonecraft","12) Scientific Revolution & Enlightenment (1600–1800)",51.53,-0.09],
+
+// 13) Revolutions & Statecraft
+["Benjamin Franklin","13) Revolutions & Statecraft (1700–1900)",39.95,-75.16],
+["George Washington","13) Revolutions & Statecraft (1700–1900)",38.19,-76.76],
+["Thomas Jefferson","13) Revolutions & Statecraft (1700–1900)",37.75,-78.91],
+["Alexander Hamilton","13) Revolutions & Statecraft (1700–1900)",17.72,-64.84],
+["Napoleon Bonaparte","13) Revolutions & Statecraft (1700–1900)",41.92,8.74],
+["Olympe de Gouges","13) Revolutions & Statecraft (1700–1900)",44.02,1.35],
+["Toussaint Louverture","13) Revolutions & Statecraft (1700–1900)",19.76,-72.33],
+["Simón Bolívar","13) Revolutions & Statecraft (1700–1900)",10.5,-66.92],
+["José de San Martín","13) Revolutions & Statecraft (1700–1900)",-28.46,-57.63],
+["Catherine the Great","13) Revolutions & Statecraft (1700–1900)",59.93,30.32],
+["Peter the Great","13) Revolutions & Statecraft (1700–1900)",55.75,37.62],
+["Emperor Qianlong","13) Revolutions & Statecraft (1700–1900)",39.92,116.39],
+["Muhammad Ali of Egypt","13) Revolutions & Statecraft (1700–1900)",30.04,31.24],
+["Kamehameha I","13) Revolutions & Statecraft (1700–1900)",20.07,-155.89],
+["Otto von Bismarck","13) Revolutions & Statecraft (1700–1900)",52.52,13.41],
+["Giuseppe Garibaldi","13) Revolutions & Statecraft (1700–1900)",43.55,7.72],
+["Abraham Lincoln","13) Revolutions & Statecraft (1700–1900)",37.79,-84.27],
+["Harriet Tubman","13) Revolutions & Statecraft (1700–1900)",38.75,-76.07],
+["Queen Victoria","13) Revolutions & Statecraft (1700–1900)",51.5,-0.14],
+["Florence Nightingale","13) Revolutions & Statecraft (1700–1900)",43.77,11.25],
+
+// 14) Industrial Age
+["James Watt","14) Industrial Age Science & Engineering (1750–1900)",55.86,-4.25],
+["Matthew Boulton","14) Industrial Age Science & Engineering (1750–1900)",52.48,-1.89],
+["Richard Arkwright","14) Industrial Age Science & Engineering (1750–1900)",53.02,-2.14],
+["James Hargreaves","14) Industrial Age Science & Engineering (1750–1900)",53.7,-2.24],
+["George Stephenson","14) Industrial Age Science & Engineering (1750–1900)",54.97,-1.62],
+["Isambard Kingdom Brunel","14) Industrial Age Science & Engineering (1750–1900)",51.45,-2.6],
+["Michael Faraday","14) Industrial Age Science & Engineering (1750–1900)",51.49,-0.16],
+["James Clerk Maxwell","14) Industrial Age Science & Engineering (1750–1900)",55.95,-3.17],
+["Charles Darwin","14) Industrial Age Science & Engineering (1750–1900)",52.64,-2.52],
+["Gregor Mendel","14) Industrial Age Science & Engineering (1750–1900)",49.2,16.61],
+["Louis Pasteur","14) Industrial Age Science & Engineering (1750–1900)",46.9,5.77],
+["Robert Koch","14) Industrial Age Science & Engineering (1750–1900)",51.75,10.25],
+["Dmitri Mendeleev","14) Industrial Age Science & Engineering (1750–1900)",56.25,68.25],
+["Alexander Graham Bell","14) Industrial Age Science & Engineering (1750–1900)",55.95,-3.19],
+["Samuel Morse","14) Industrial Age Science & Engineering (1750–1900)",41.31,-72.93],
+["Thomas Edison","14) Industrial Age Science & Engineering (1750–1900)",40.74,-74.17],
+["Nikola Tesla","14) Industrial Age Science & Engineering (1750–1900)",44.56,15.32],
+["Charles Babbage","14) Industrial Age Science & Engineering (1750–1900)",51.51,-0.12],
+["Ada Lovelace","14) Industrial Age Science & Engineering (1750–1900)",51.5,-0.14],
+["Wilhelm Röntgen","14) Industrial Age Science & Engineering (1750–1900)",51.44,6.76],
+
+// 15) Science 1900-1950
+["Marie Curie","15) Science & Technology (1900–1950)",52.23,21.01],
+["Albert Einstein","15) Science & Technology (1900–1950)",48.4,9.99],
+["Max Planck","15) Science & Technology (1900–1950)",54.08,10.13],
+["Niels Bohr","15) Science & Technology (1900–1950)",55.68,12.57],
+["Werner Heisenberg","15) Science & Technology (1900–1950)",48.86,12.12],
+["Erwin Schrödinger","15) Science & Technology (1900–1950)",48.21,16.37],
+["Paul Dirac","15) Science & Technology (1900–1950)",51.45,-2.58],
+["Enrico Fermi","15) Science & Technology (1900–1950)",41.9,12.5],
+["Lise Meitner","15) Science & Technology (1900–1950)",48.21,16.37],
+["J. Robert Oppenheimer","15) Science & Technology (1900–1950)",40.71,-74.01],
+["Alan Turing","15) Science & Technology (1900–1950)",51.52,-0.13],
+["John von Neumann","15) Science & Technology (1900–1950)",47.5,19.04],
+["Claude Shannon","15) Science & Technology (1900–1950)",42.76,-84.77],
+["Hedy Lamarr","15) Science & Technology (1900–1950)",48.21,16.37],
+["Alexander Fleming","15) Science & Technology (1900–1950)",55.64,-4.54],
+["Orville Wright","15) Science & Technology (1900–1950)",39.76,-84.19],
+["Wilbur Wright","15) Science & Technology (1900–1950)",39.77,-84.19],
+["Edwin Hubble","15) Science & Technology (1900–1950)",38.93,-92.33],
+["Kurt Gödel","15) Science & Technology (1900–1950)",49.2,16.61],
+["Vannevar Bush","15) Science & Technology (1900–1950)",42.36,-71.06],
+
+// 16) Computing & Internet
+["Grace Hopper","16) Computing & Internet (1950–present)",40.71,-74.01],
+["Margaret Hamilton","16) Computing & Internet (1950–present)",40.32,-83.76],
+["Barbara Liskov","16) Computing & Internet (1950–present)",34.05,-118.24],
+["Edsger W. Dijkstra","16) Computing & Internet (1950–present)",51.92,4.48],
+["Donald Knuth","16) Computing & Internet (1950–present)",43.08,-89.39],
+["John McCarthy","16) Computing & Internet (1950–present)",42.36,-71.06],
+["Marvin Minsky","16) Computing & Internet (1950–present)",40.71,-74.0],
+["Dennis Ritchie","16) Computing & Internet (1950–present)",40.41,-74.01],
+["Ken Thompson","16) Computing & Internet (1950–present)",40.41,-74.02],
+["Linus Torvalds","16) Computing & Internet (1950–present)",60.17,24.94],
+["Tim Berners-Lee","16) Computing & Internet (1950–present)",51.51,-0.12],
+["Vint Cerf","16) Computing & Internet (1950–present)",38.9,-77.04],
+["Bob Kahn","16) Computing & Internet (1950–present)",40.71,-74.0],
+["Steve Jobs","16) Computing & Internet (1950–present)",37.33,-122.03],
+["Bill Gates","16) Computing & Internet (1950–present)",47.61,-122.33],
+["Paul Allen","16) Computing & Internet (1950–present)",47.61,-122.34],
+["Larry Page","16) Computing & Internet (1950–present)",42.28,-83.74],
+["Sergey Brin","16) Computing & Internet (1950–present)",55.76,37.62],
+["Jeff Bezos","16) Computing & Internet (1950–present)",30.27,-97.74],
+["Jensen Huang","16) Computing & Internet (1950–present)",25.03,121.57],
+
+// 17) Politics & Power
+["Vladimir Lenin","17) Politics & Power (1900–present)",56.33,44.0],
+["Joseph Stalin","17) Politics & Power (1900–present)",41.99,44.0],
+["Adolf Hitler","17) Politics & Power (1900–present)",48.25,13.04],
+["Winston Churchill","17) Politics & Power (1900–present)",51.84,-1.32],
+["Franklin D. Roosevelt","17) Politics & Power (1900–present)",41.77,-73.93],
+["Mao Zedong","17) Politics & Power (1900–present)",27.88,112.58],
+["Chiang Kai-shek","17) Politics & Power (1900–present)",29.86,121.63],
+["Mustafa Kemal Atatürk","17) Politics & Power (1900–present)",40.62,22.96],
+["Charles de Gaulle","17) Politics & Power (1900–present)",50.63,3.06],
+["Margaret Thatcher","17) Politics & Power (1900–present)",52.91,-0.64],
+["Ronald Reagan","17) Politics & Power (1900–present)",41.97,-89.67],
+["Deng Xiaoping","17) Politics & Power (1900–present)",30.82,106.73],
+["Mikhail Gorbachev","17) Politics & Power (1900–present)",46.12,42.0],
+["Fidel Castro","17) Politics & Power (1900–present)",20.74,-76.32],
+["Jawaharlal Nehru","17) Politics & Power (1900–present)",25.43,81.85],
+["Indira Gandhi","17) Politics & Power (1900–present)",25.44,81.85],
+["Golda Meir","17) Politics & Power (1900–present)",50.44,30.52],
+["Nelson Mandela","17) Politics & Power (1900–present)",-31.58,28.79],
+["Angela Merkel","17) Politics & Power (1900–present)",53.07,8.81],
+["Vladimir Putin","17) Politics & Power (1900–present)",59.93,30.32],
+
+// 18) Social Movements
+["Mahatma Gandhi","18) Social Movements & Human Rights",22.3,70.8],
+["Martin Luther King Jr.","18) Social Movements & Human Rights",33.75,-84.39],
+["Malcolm X","18) Social Movements & Human Rights",42.11,-72.59],
+["Rosa Parks","18) Social Movements & Human Rights",32.38,-86.3],
+["Frederick Douglass","18) Social Movements & Human Rights",38.59,-76.07],
+["W. E. B. Du Bois","18) Social Movements & Human Rights",42.19,-73.36],
+["Susan B. Anthony","18) Social Movements & Human Rights",42.33,-71.06],
+["Emmeline Pankhurst","18) Social Movements & Human Rights",53.48,-2.24],
+["Simone de Beauvoir","18) Social Movements & Human Rights",48.85,2.35],
+["Betty Friedan","18) Social Movements & Human Rights",40.69,-89.59],
+["Audre Lorde","18) Social Movements & Human Rights",40.71,-74.01],
+["Cesar Chavez","18) Social Movements & Human Rights",32.92,-111.73],
+["Dolores Huerta","18) Social Movements & Human Rights",36.75,-119.77],
+["Harvey Milk","18) Social Movements & Human Rights",40.84,-73.86],
+["Desmond Tutu","18) Social Movements & Human Rights",-26.2,28.04],
+["Lech Wałęsa","18) Social Movements & Human Rights",54.35,18.65],
+["Václav Havel","18) Social Movements & Human Rights",50.08,14.43],
+["Wangari Maathai","18) Social Movements & Human Rights",-0.43,36.95],
+["Malala Yousafzai","18) Social Movements & Human Rights",35.22,72.33],
+["Greta Thunberg","18) Social Movements & Human Rights",59.33,18.07],
+
+// 19) Literature & Visual Arts
+["Jane Austen","19) Literature & Visual Arts (1800–present)",51.06,-1.31],
+["Mary Shelley","19) Literature & Visual Arts (1800–present)",51.51,-0.13],
+["Charles Dickens","19) Literature & Visual Arts (1800–present)",50.8,-1.09],
+["Leo Tolstoy","19) Literature & Visual Arts (1800–present)",54.07,37.52],
+["Fyodor Dostoevsky","19) Literature & Visual Arts (1800–present)",55.76,37.62],
+["Franz Kafka","19) Literature & Visual Arts (1800–present)",50.09,14.42],
+["Marcel Proust","19) Literature & Visual Arts (1800–present)",48.87,2.33],
+["James Joyce","19) Literature & Visual Arts (1800–present)",53.35,-6.26],
+["Virginia Woolf","19) Literature & Visual Arts (1800–present)",51.47,-0.17],
+["George Orwell","19) Literature & Visual Arts (1800–present)",26.6,84.0],
+["Jorge Luis Borges","19) Literature & Visual Arts (1800–present)",-34.6,-58.38],
+["Gabriel García Márquez","19) Literature & Visual Arts (1800–present)",10.4,-75.51],
+["Chinua Achebe","19) Literature & Visual Arts (1800–present)",6.17,7.08],
+["Toni Morrison","19) Literature & Visual Arts (1800–present)",41.44,-82.01],
+["Pablo Picasso","19) Literature & Visual Arts (1800–present)",36.72,-4.42],
+["Vincent van Gogh","19) Literature & Visual Arts (1800–present)",51.44,5.47],
+["Frida Kahlo","19) Literature & Visual Arts (1800–present)",19.36,-99.16],
+["Georgia O'Keeffe","19) Literature & Visual Arts (1800–present)",42.98,-88.01],
+["Andy Warhol","19) Literature & Visual Arts (1800–present)",40.44,-79.99],
+["Ai Weiwei","19) Literature & Visual Arts (1800–present)",39.92,116.39],
+
+// 20) Music, Film & Popular Culture
+["Johann Sebastian Bach","20) Music, Film & Popular Culture",50.98,10.32],
+["Wolfgang Amadeus Mozart","20) Music, Film & Popular Culture",47.8,13.04],
+["Ludwig van Beethoven","20) Music, Film & Popular Culture",50.73,7.1],
+["Giuseppe Verdi","20) Music, Film & Popular Culture",44.93,10.09],
+["Richard Wagner","20) Music, Film & Popular Culture",51.34,12.38],
+["Pyotr Ilyich Tchaikovsky","20) Music, Film & Popular Culture",56.33,40.42],
+["Igor Stravinsky","20) Music, Film & Popular Culture",59.95,30.32],
+["Louis Armstrong","20) Music, Film & Popular Culture",29.95,-90.07],
+["Duke Ellington","20) Music, Film & Popular Culture",38.9,-77.04],
+["Billie Holiday","20) Music, Film & Popular Culture",39.3,-76.61],
+["Ella Fitzgerald","20) Music, Film & Popular Culture",40.82,-73.92],
+["Aretha Franklin","20) Music, Film & Popular Culture",42.33,-83.05],
+["Bob Dylan","20) Music, Film & Popular Culture",47.49,-92.1],
+["John Lennon","20) Music, Film & Popular Culture",53.41,-2.98],
+["Paul McCartney","20) Music, Film & Popular Culture",53.41,-2.97],
+["Michael Jackson","20) Music, Film & Popular Culture",41.61,-87.34],
+["Charlie Chaplin","20) Music, Film & Popular Culture",51.47,-0.12],
+["Akira Kurosawa","20) Music, Film & Popular Culture",35.69,139.69],
+["Walt Disney","20) Music, Film & Popular Culture",41.88,-87.63],
+["Hayao Miyazaki","20) Music, Film & Popular Culture",35.69,139.7]
+];
+
+// ── Build map ──
+const map = L.map('map', {
+  center: [20, 15],
+  zoom: 2.5,
+  minZoom: 2,
+  maxZoom: 18,
+  zoomControl: false,
+  worldCopyJump: true
+});
+
+L.control.zoom({ position: 'topright' }).addTo(map);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/">OSM</a>',
+  subdomains: 'abcd',
+  maxZoom: 20
+}).addTo(map);
+
+// ── Create markers by category ──
+const catLayers = {};
+const catCounts = {};
+
+DATA.forEach(([name, cat, lat, lng]) => {
+  if (!catLayers[cat]) {
+    catLayers[cat] = L.layerGroup().addTo(map);
+    catCounts[cat] = 0;
+  }
+  catCounts[cat]++;
+
+  const color = CAT_COLORS[cat] || '#6c8aff';
+  const marker = L.circleMarker([lat, lng], {
+    radius: 5,
+    fillColor: color,
+    color: '#fff',
+    weight: .6,
+    opacity: .8,
+    fillOpacity: .85
+  });
+
+  const shortCat = cat.replace(/^\d+\)\s*/, '');
+  marker.bindPopup(`<b>${name}</b><div class="pop-cat">${shortCat}</div>`);
+  marker.on('mouseover', function(){ this.setRadius(9); this.openPopup(); });
+  marker.on('mouseout',  function(){ this.setRadius(5); this.closePopup(); });
+  marker.addTo(catLayers[cat]);
+});
+
+// ── Legend ──
+const legend = document.getElementById('legend');
+const visState = {};
+
+Object.keys(CAT_COLORS).forEach(cat => {
+  if (!catLayers[cat]) return;
+  visState[cat] = true;
+
+  const row = document.createElement('div');
+  row.className = 'legend-item';
+
+  const dot = document.createElement('span');
+  dot.className = 'legend-dot';
+  dot.style.background = CAT_COLORS[cat];
+
+  const label = document.createElement('span');
+  label.className = 'legend-label';
+  label.textContent = cat.replace(/^\d+\)\s*/, '');
+
+  const count = document.createElement('span');
+  count.className = 'legend-count';
+  count.textContent = catCounts[cat] || 0;
+
+  row.appendChild(dot);
+  row.appendChild(label);
+  row.appendChild(count);
+  legend.appendChild(row);
+
+  row.addEventListener('click', () => {
+    visState[cat] = !visState[cat];
+    if (visState[cat]) {
+      map.addLayer(catLayers[cat]);
+      row.classList.remove('dimmed');
+    } else {
+      map.removeLayer(catLayers[cat]);
+      row.classList.add('dimmed');
+    }
+    updateCount();
+  });
+});
+
+function updateCount() {
+  let n = 0;
+  Object.keys(visState).forEach(cat => { if (visState[cat]) n += (catCounts[cat]||0); });
+  document.getElementById('visCount').textContent = n;
+}
+</script>
+</body>
+</html>

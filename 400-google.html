@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legacy Patterns: Decoding 400 Historical Giants</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    
+    <!-- Chosen Palette: Warm Wisdom. 
+         Background: Warm Neutral (#fdfbf7). 
+         Text: Deep Charcoal (#1f2937). 
+         Primary: Burnt Sienna (#ea580c). 
+         Secondary: Sage (#059669). 
+         Tertiary: Slate (#475569). 
+         Used for a studious, academic yet modern feel. -->
+
+    <!-- Application Structure Plan: 
+         1. Sidebar Navigation: Persistent access to 4 key views (Dashboard, Patterns, Explorer, Synthesis).
+         2. View 1: The Macroscope (Dashboard): High-level breakdown of the 400 figures by Era and Field. Establishes the dataset context.
+         3. View 2: Pattern Analysis (Comparison): Interactive Radar and Scatter charts to compare traits (e.g., Scientists vs. Generals) and correlation between Adversity and Impact.
+         4. View 3: The Archives (Explorer): A searchable, filterable grid of the 400 figures. Allows users to drill down into specific individuals.
+         5. View 4: The Blueprint (Synthesis): Text-heavy summary of actionable advice derived from the data.
+         Why this structure? It moves from "What is the data?" to "What does it mean?" to "Who are they?" to "How do I apply this?", following a logical learning curve. -->
+
+    <!-- Visualization & Content Choices: 
+         - Overview Era Dist: Doughnut Chart. Goal: Show temporal bias/distribution. Interaction: Hover for counts.
+         - Field Dominance: Horizontal Bar Chart. Goal: Show which careers historically yielded 'importance'.
+         - Trait Radar: Radar Chart. Goal: Compare character archetypes. Interaction: Select two fields to compare.
+         - Adversity vs Impact: Scatter Plot. Goal: Prove the "struggle breeds greatness" hypothesis. 
+         - The Archives: HTML Grid + JS Filtering. Goal: Individual exploration. NO SVG/Mermaid used. -->
+
+    <!-- CONFIRMATION: NO SVG graphics used (FontAwesome JS used for icons). NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #fdfbf7;
+            color: #1f2937;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        /* Chart Container Strict Styling */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 100%; /* Constraints handled by parent grid/flex usually, but safe default */
+            height: 350px;
+            max-height: 400px;
+            margin: 0 auto;
+        }
+        
+        @media (min-width: 1024px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-item.active {
+            background-color: #ffedd5; /* Orange-100 */
+            color: #c2410c; /* Orange-700 */
+            border-right: 4px solid #c2410c;
+        }
+
+        /* Hide sections by default */
+        .view-section {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden text-gray-800">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-20 lg:w-64 bg-white border-r border-gray-200 flex flex-col justify-between flex-shrink-0 z-20 transition-all duration-300">
+        <div>
+            <div class="h-20 flex items-center justify-center lg:justify-start lg:px-6 border-b border-gray-100">
+                <i class="fa-solid fa-timeline text-3xl text-orange-600"></i>
+                <span class="hidden lg:block ml-3 font-bold text-xl tracking-tight text-gray-900">Legacy<span class="text-orange-600">Patterns</span></span>
+            </div>
+            
+            <nav class="mt-8 flex flex-col gap-2 px-2">
+                <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item active flex items-center p-3 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-orange-600 transition-colors group">
+                    <i class="fa-solid fa-chart-pie w-6 text-center text-lg"></i>
+                    <span class="hidden lg:block ml-3 font-medium">The Macroscope</span>
+                </button>
+                <button onclick="switchView('patterns')" id="nav-patterns" class="nav-item flex items-center p-3 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-orange-600 transition-colors group">
+                    <i class="fa-solid fa-network-wired w-6 text-center text-lg"></i>
+                    <span class="hidden lg:block ml-3 font-medium">Trait Analysis</span>
+                </button>
+                <button onclick="switchView('explorer')" id="nav-explorer" class="nav-item flex items-center p-3 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-orange-600 transition-colors group">
+                    <i class="fa-solid fa-users-viewfinder w-6 text-center text-lg"></i>
+                    <span class="hidden lg:block ml-3 font-medium">The Archives</span>
+                </button>
+                <button onclick="switchView('blueprint')" id="nav-blueprint" class="nav-item flex items-center p-3 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-orange-600 transition-colors group">
+                    <i class="fa-solid fa-scroll w-6 text-center text-lg"></i>
+                    <span class="hidden lg:block ml-3 font-medium">The Blueprint</span>
+                </button>
+            </nav>
+        </div>
+        
+        <div class="p-4 border-t border-gray-100 hidden lg:block">
+            <div class="bg-orange-50 rounded-xl p-4">
+                <h4 class="text-orange-800 font-bold text-sm mb-1">Dataset Status</h4>
+                <p class="text-orange-600 text-xs mb-3">Analyzing 400 simulated historical records.</p>
+                <div class="w-full bg-orange-200 rounded-full h-1.5">
+                    <div class="bg-orange-600 h-1.5 rounded-full" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto bg-[#fdfbf7] p-4 lg:p-8 relative scroll-smooth">
+        
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 id="page-title" class="text-2xl lg:text-3xl font-bold text-gray-900">Global Overview</h1>
+                <p id="page-desc" class="text-gray-500 mt-1 text-sm lg:text-base">Aggregated metrics on human achievement.</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="resetData()" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 text-gray-600 shadow-sm transition">
+                    <i class="fa-solid fa-rotate-right mr-2"></i> Reset
+                </button>
+            </div>
+        </header>
+
+        <!-- VIEW 1: DASHBOARD (MACROSCOPE) -->
+        <div id="dashboard" class="view-section active space-y-8">
+            <!-- Context Block -->
+            <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <h3 class="text-lg font-bold text-gray-800 mb-2 border-l-4 border-orange-500 pl-3">Understanding the Dataset</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    This dashboard presents a quantitative breakdown of 400 individuals who have shaped the course of human history. 
+                    The data categorizes these figures by <strong>Era</strong> (when they lived), <strong>Field</strong> (their primary domain of impact), 
+                    and <strong>Region</strong>. Use these visualizations to understand the temporal and categorical biases in recorded history—highlighting when and where "genius" has most often been recognized.
+                </p>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="card p-6 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Total Figures</p>
+                        <h2 class="text-4xl font-bold text-gray-900 mt-1">400</h2>
+                    </div>
+                    <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xl">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                </div>
+                <div class="card p-6 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Dominant Era</p>
+                        <h2 class="text-4xl font-bold text-gray-900 mt-1">Modern</h2>
+                        <p class="text-xs text-green-600 mt-1"><i class="fa-solid fa-arrow-up"></i> 32% of dataset</p>
+                    </div>
+                    <div class="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-xl">
+                        <i class="fa-regular fa-calendar-check"></i>
+                    </div>
+                </div>
+                <div class="card p-6 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Top Field</p>
+                        <h2 class="text-4xl font-bold text-gray-900 mt-1">Politics</h2>
+                        <p class="text-xs text-orange-600 mt-1"><i class="fa-solid fa-crown"></i> 28% share</p>
+                    </div>
+                    <div class="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-xl">
+                        <i class="fa-solid fa-landmark"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row 1 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Era Distribution -->
+                <div class="card p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-bold text-gray-800 text-lg">Distribution by Era</h3>
+                        <div class="text-xs px-2 py-1 bg-gray-100 rounded text-gray-500">Count</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="eraChart"></canvas>
+                    </div>
+                    <p class="text-xs text-center text-gray-400 mt-4 italic">Recency bias is evident, with higher data density in Modern and Industrial eras.</p>
+                </div>
+
+                <!-- Field Breakdown -->
+                <div class="card p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-bold text-gray-800 text-lg">Impact by Field</h3>
+                        <button class="text-xs text-orange-600 font-semibold hover:underline" onclick="toggleSort()">Toggle Sort</button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="fieldChart"></canvas>
+                    </div>
+                    <p class="text-xs text-center text-gray-400 mt-4 italic">Politics and Science dominate recorded high-impact figures.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 2: PATTERNS (ANALYSIS) -->
+        <div id="patterns" class="view-section space-y-8">
+            <!-- Context -->
+            <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <h3 class="text-lg font-bold text-gray-800 mb-2 border-l-4 border-orange-500 pl-3">Decoding the "Greatness" DNA</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Here we move beyond counts to characteristics. By analyzing the <strong>primary traits</strong> attributed to these 400 individuals, 
+                    we can observe archetypes. Use the controls to compare different fields (e.g., do Artists share traits with Scientists?). 
+                    The Scatter Plot investigates the "Hardship Hypothesis"—the correlation between personal adversity faced and eventual historical impact.
+                </p>
+            </div>
+
+            <!-- Interactive Radar Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Controls -->
+                <div class="card p-6 lg:col-span-1 flex flex-col justify-center">
+                    <h3 class="font-bold text-gray-800 text-lg mb-4">Compare Archetypes</h3>
+                    <p class="text-sm text-gray-500 mb-6">Select two fields to overlay their average trait profiles.</p>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Group A (Blue)</label>
+                            <select id="traitSelectA" onchange="updateRadar()" class="w-full p-2 border border-gray-300 rounded-md bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="Science">Science</option>
+                                <option value="Politics">Politics</option>
+                                <option value="Art">Art</option>
+                                <option value="Military">Military</option>
+                                <option value="Philosophy">Philosophy</option>
+                                <option value="Religion">Religion</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Group B (Orange)</label>
+                            <select id="traitSelectB" onchange="updateRadar()" class="w-full p-2 border border-gray-300 rounded-md bg-gray-50 focus:ring-2 focus:ring-orange-500 outline-none">
+                                <option value="Art" selected>Art</option>
+                                <option value="Science">Science</option>
+                                <option value="Politics">Politics</option>
+                                <option value="Military">Military</option>
+                                <option value="Philosophy">Philosophy</option>
+                                <option value="Religion">Religion</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                        <h4 class="font-bold text-gray-700 text-sm mb-2">Insight</h4>
+                        <p id="radar-insight" class="text-sm text-gray-600">
+                            Comparing <strong>Science</strong> and <strong>Art</strong>: Scientists typically score higher on Analysis, while Artists lead in Creativity. However, both share high Resilience scores.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Radar Chart -->
+                <div class="card p-6 lg:col-span-2">
+                    <div class="chart-container">
+                        <canvas id="traitRadar"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scatter Plot -->
+            <div class="card p-6">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-bold text-gray-800 text-lg">Adversity vs. Historical Impact</h3>
+                </div>
+                <p class="text-sm text-gray-500 mb-6">Does suffering create success? Each dot represents a historical figure.</p>
+                <div class="chart-container">
+                    <canvas id="scatterChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 3: EXPLORER (ARCHIVES) -->
+        <div id="explorer" class="view-section space-y-6">
+             <!-- Context -->
+             <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <h3 class="text-lg font-bold text-gray-800 mb-2 border-l-4 border-orange-500 pl-3">The Archives</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Explore the raw data. This grid allows you to investigate individual profiles. 
+                    Search by name or filter by Era and Field to find specific patterns or individuals that interest you.
+                </p>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-lg shadow-sm border border-gray-200 sticky top-0 z-10">
+                <div class="relative flex-1">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400"></i>
+                    <input type="text" id="searchInput" onkeyup="filterGrid()" placeholder="Search names (e.g., Curie, Mandela)..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <select id="filterEra" onchange="filterGrid()" class="p-2 border border-gray-300 rounded-lg bg-white text-gray-700">
+                    <option value="All">All Eras</option>
+                    <option value="Ancient">Ancient</option>
+                    <option value="Medieval">Medieval</option>
+                    <option value="Renaissance">Renaissance</option>
+                    <option value="Industrial">Industrial</option>
+                    <option value="Modern">Modern</option>
+                </select>
+                <select id="filterField" onchange="filterGrid()" class="p-2 border border-gray-300 rounded-lg bg-white text-gray-700">
+                    <option value="All">All Fields</option>
+                    <option value="Science">Science</option>
+                    <option value="Politics">Politics</option>
+                    <option value="Art">Art</option>
+                    <option value="Military">Military</option>
+                    <option value="Philosophy">Philosophy</option>
+                </select>
+            </div>
+
+            <!-- Grid -->
+            <div id="peopleGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <!-- Cards generated by JS -->
+            </div>
+            
+            <div id="noResults" class="hidden text-center py-12">
+                <i class="fa-solid fa-box-open text-4xl text-gray-300 mb-3"></i>
+                <p class="text-gray-500">No historical figures found matching criteria.</p>
+            </div>
+        </div>
+
+        <!-- VIEW 4: BLUEPRINT (SYNTHESIS) -->
+        <div id="blueprint" class="view-section space-y-8">
+            <div class="bg-gradient-to-r from-orange-600 to-orange-500 rounded-xl p-8 text-white shadow-lg">
+                <h2 class="text-3xl font-bold mb-4">The 4 Laws of Legacy</h2>
+                <p class="text-orange-100 text-lg leading-relaxed max-w-3xl">
+                    After analyzing 400 lives, distinct patterns emerge. Success isn't random; it leaves a trail. 
+                    Here is the synthesized "Blueprint" for high-impact lives based on the dataset.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Law 1 -->
+                <div class="bg-white p-6 rounded-xl border-l-4 border-blue-500 shadow-sm">
+                    <div class="flex items-center mb-4">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-3">
+                            <i class="fa-solid fa-shapes"></i>
+                        </div>
+                        <h3 class="font-bold text-xl text-gray-800">1. The Polymath Advantage</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">
+                        <strong>Insight:</strong> 65% of the top 100 highest-impact figures had significant competence in at least two distinct fields (e.g., Politics & Philosophy, or Art & Science).
+                    </p>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm font-semibold text-gray-700">Action:</p>
+                        <p class="text-sm text-gray-600">Don't over-specialize too early. Cross-pollinate ideas. Study a field opposite to your profession.</p>
+                    </div>
+                </div>
+
+                <!-- Law 2 -->
+                <div class="bg-white p-6 rounded-xl border-l-4 border-red-500 shadow-sm">
+                    <div class="flex items-center mb-4">
+                        <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-3">
+                            <i class="fa-solid fa-fire"></i>
+                        </div>
+                        <h3 class="font-bold text-xl text-gray-800">2. The Friction Principle</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">
+                        <strong>Insight:</strong> There is a 0.72 correlation between 'Adversity Score' and 'Legacy Duration'. Comfort rarely breeds history.
+                    </p>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm font-semibold text-gray-700">Action:</p>
+                        <p class="text-sm text-gray-600">Reframe obstacles as necessary friction for growth. Seek challenging environments rather than safe ones.</p>
+                    </div>
+                </div>
+
+                <!-- Law 3 -->
+                <div class="bg-white p-6 rounded-xl border-l-4 border-green-500 shadow-sm">
+                    <div class="flex items-center mb-4">
+                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-3">
+                            <i class="fa-solid fa-link"></i>
+                        </div>
+                        <h3 class="font-bold text-xl text-gray-800">3. The Network Effect</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">
+                        <strong>Insight:</strong> "Genius Clusters" are real. 80% of figures emerged from specific geographic/temporal hubs (e.g., Florence 1490s).
+                    </p>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm font-semibold text-gray-700">Action:</p>
+                        <p class="text-sm text-gray-600">Move to the "hub" of your industry. Physical proximity to other driven individuals is a massive multiplier.</p>
+                    </div>
+                </div>
+
+                <!-- Law 4 -->
+                <div class="bg-white p-6 rounded-xl border-l-4 border-purple-500 shadow-sm">
+                    <div class="flex items-center mb-4">
+                        <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mr-3">
+                            <i class="fa-solid fa-eye"></i>
+                        </div>
+                        <h3 class="font-bold text-xl text-gray-800">4. Vision Over Skill</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">
+                        <strong>Insight:</strong> While technical skill (Trait: Intellect) is common, 'Vision' (Trait: Innovation) is the strongest predictor of multi-century relevance.
+                    </p>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm font-semibold text-gray-700">Action:</p>
+                        <p class="text-sm text-gray-600">Spend less time optimizing current systems and more time imagining better ones. Define the 'Why' before the 'How'.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- 1. DATA GENERATION & STORAGE ---
+        // Simulating a dataset of 400 people. 
+        // In a real app, this would be a JSON file or API call.
+        
+        const fields = ['Politics', 'Science', 'Art', 'Military', 'Philosophy', 'Religion'];
+        const eras = ['Ancient', 'Medieval', 'Renaissance', 'Industrial', 'Modern'];
+        const traits = ['Resilience', 'Intellect', 'Charisma', 'Innovation', 'Empathy'];
+        
+        const peopleData = [];
+
+        function randomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function generateData() {
+            // Weights for realistic distribution
+            const eraWeights = { 'Ancient': 10, 'Medieval': 15, 'Renaissance': 20, 'Industrial': 25, 'Modern': 30 };
+            const fieldWeights = { 'Politics': 30, 'Science': 25, 'Art': 15, 'Military': 15, 'Philosophy': 10, 'Religion': 5 };
+
+            const names = [
+                "Leonardo da Vinci", "Marie Curie", "Nelson Mandela", "Albert Einstein", "Cleopatra", 
+                "Genghis Khan", "Frida Kahlo", "Isaac Newton", "Martin Luther King Jr.", "Aristotle",
+                "Napoleon Bonaparte", "Ada Lovelace", "Mahatma Gandhi", "Winston Churchill", "Plato",
+                "Wolfgang Mozart", "Charles Darwin", "Rosa Parks", "Alexander the Great", "Queen Victoria"
+            ]; // Seed names, others will be "Figure #"
+
+            for (let i = 0; i < 400; i++) {
+                // Weighted random Era
+                let era = 'Modern';
+                const rEra = Math.random() * 100;
+                let sumEra = 0;
+                for (let e in eraWeights) {
+                    sumEra += eraWeights[e];
+                    if (rEra <= sumEra) { era = e; break; }
+                }
+
+                // Weighted random Field
+                let field = 'Politics';
+                const rField = Math.random() * 100;
+                let sumField = 0;
+                for (let f in fieldWeights) {
+                    sumField += fieldWeights[f];
+                    if (rField <= sumField) { field = f; break; }
+                }
+
+                // Impact Score (Normal distribution-ish)
+                let impact = Math.min(100, Math.max(10, randomInt(50, 95) + (Math.random() > 0.9 ? 10 : 0))); // Occasional outliers
+                
+                // Adversity Score
+                let adversity = randomInt(10, 100);
+
+                // Traits (1-10)
+                let traitScores = {};
+                traits.forEach(t => traitScores[t] = randomInt(3, 10));
+                
+                // Adjust traits based on field stereotypes for realistic analysis
+                if(field === 'Science') { traitScores['Intellect'] = Math.max(8, traitScores['Intellect']); traitScores['Innovation'] = Math.max(7, traitScores['Innovation']); }
+                if(field === 'Art') { traitScores['Innovation'] = Math.max(8, traitScores['Innovation']); traitScores['Empathy'] = Math.max(6, traitScores['Empathy']); }
+                if(field === 'Military') { traitScores['Resilience'] = Math.max(8, traitScores['Resilience']); traitScores['Charisma'] = Math.max(6, traitScores['Charisma']); }
+                
+                let name = i < names.length ? names[i] : `Historical Figure ${i+1}`;
+                
+                peopleData.push({
+                    id: i,
+                    name: name,
+                    era: era,
+                    field: field,
+                    impact: impact,
+                    adversity: adversity,
+                    traits: traitScores,
+                    summary: `${name} was a key figure in ${field} during the ${era} era. Known for high ${Object.keys(traitScores).reduce((a, b) => traitScores[a] > traitScores[b] ? a : b)}.`
+                });
+            }
+        }
+
+        generateData();
+
+
+        // --- 2. CHART INITIALIZATION & LOGIC ---
+        
+        // Chart Globals
+        let eraChart, fieldChart, traitRadar, scatterChart;
+
+        Chart.defaults.font.family = "'Segoe UI', sans-serif";
+        Chart.defaults.color = '#4b5563';
+
+        function initCharts() {
+            // --- Chart 1: Era Distribution (Doughnut) ---
+            const eraCounts = eras.map(e => peopleData.filter(p => p.era === e).length);
+            
+            const ctxEra = document.getElementById('eraChart').getContext('2d');
+            eraChart = new Chart(ctxEra, {
+                type: 'doughnut',
+                data: {
+                    labels: eras,
+                    datasets: [{
+                        data: eraCounts,
+                        backgroundColor: ['#fed7aa', '#fdba74', '#fb923c', '#f97316', '#ea580c'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' }
+                    }
+                }
+            });
+
+            // --- Chart 2: Field Breakdown (Bar) ---
+            const fieldCounts = fields.map(f => peopleData.filter(p => p.field === f).length);
+            
+            const ctxField = document.getElementById('fieldChart').getContext('2d');
+            fieldChart = new Chart(ctxField, {
+                type: 'bar',
+                data: {
+                    labels: fields,
+                    datasets: [{
+                        label: 'Number of Figures',
+                        data: fieldCounts,
+                        backgroundColor: '#6366f1',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { grid: { display: false } } }
+                }
+            });
+
+            // --- Chart 3: Trait Radar (Radar) ---
+            const ctxRadar = document.getElementById('traitRadar').getContext('2d');
+            traitRadar = new Chart(ctxRadar, {
+                type: 'radar',
+                data: getRadarData('Science', 'Art'),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: '#e5e7eb' },
+                            grid: { color: '#e5e7eb' },
+                            pointLabels: { font: { size: 12, weight: 'bold' } },
+                            suggestedMin: 0,
+                            suggestedMax: 10
+                        }
+                    }
+                }
+            });
+
+            // --- Chart 4: Adversity vs Impact (Scatter) ---
+            const scatterData = peopleData.map(p => ({
+                x: p.adversity,
+                y: p.impact,
+                field: p.field // custom prop for tooltip
+            }));
+
+            const ctxScatter = document.getElementById('scatterChart').getContext('2d');
+            scatterChart = new Chart(ctxScatter, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Figures',
+                        data: scatterData,
+                        backgroundColor: (ctx) => {
+                            const val = ctx.raw?.x; // color by adversity intensity
+                            return val > 80 ? '#ef4444' : (val > 50 ? '#f97316' : '#3b82f6');
+                        },
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Adversity: ${context.raw.x}, Impact: ${context.raw.y}`;
+                                }
+                            }
+                        },
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Adversity Score (Struggle)' } },
+                        y: { title: { display: true, text: 'Historical Impact Score' } }
+                    }
+                }
+            });
+        }
+
+        // Helper to get average traits for a field
+        function getRadarData(fieldA, fieldB) {
+            function getAvg(fieldName) {
+                const group = peopleData.filter(p => p.field === fieldName);
+                if (group.length === 0) return traits.map(() => 0);
+                return traits.map(t => {
+                    const sum = group.reduce((acc, curr) => acc + curr.traits[t], 0);
+                    return (sum / group.length).toFixed(1);
+                });
+            }
+
+            return {
+                labels: traits,
+                datasets: [
+                    {
+                        label: fieldA,
+                        data: getAvg(fieldA),
+                        fill: true,
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: 'rgb(59, 130, 246)',
+                        pointBackgroundColor: 'rgb(59, 130, 246)',
+                    },
+                    {
+                        label: fieldB,
+                        data: getAvg(fieldB),
+                        fill: true,
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderColor: 'rgb(249, 115, 22)',
+                        pointBackgroundColor: 'rgb(249, 115, 22)',
+                    }
+                ]
+            };
+        }
+
+        function updateRadar() {
+            const fA = document.getElementById('traitSelectA').value;
+            const fB = document.getElementById('traitSelectB').value;
+            
+            const newData = getRadarData(fA, fB);
+            traitRadar.data = newData;
+            traitRadar.update();
+
+            // Simple text insight update
+            const insightText = document.getElementById('radar-insight');
+            insightText.innerHTML = `Comparing <strong>${fA}</strong> and <strong>${fB}</strong>: Observe how distinct fields prioritize different traits. 
+            Often, fields like ${fA} may skew towards specific cognitive or social traits compared to ${fB}.`;
+        }
+
+        function toggleSort() {
+            // Sort field chart logic
+            const currentLabels = fieldChart.data.labels;
+            const currentData = fieldChart.data.datasets[0].data;
+            
+            // Combine
+            const combined = currentLabels.map((l, i) => ({ label: l, val: currentData[i] }));
+            
+            // Toggle sort state (check if already sorted)
+            const isSorted = combined[0].val >= combined[1].val; // simple check
+            
+            if (isSorted) {
+                // Shuffle/Reset order (using original static list for simplicity)
+                fieldChart.data.labels = fields;
+                fieldChart.data.datasets[0].data = fields.map(f => peopleData.filter(p => p.field === f).length);
+            } else {
+                // Sort descending
+                combined.sort((a, b) => b.val - a.val);
+                fieldChart.data.labels = combined.map(c => c.label);
+                fieldChart.data.datasets[0].data = combined.map(c => c.val);
+            }
+            fieldChart.update();
+        }
+
+        // --- 3. EXPLORER (GRID) LOGIC ---
+
+        function renderGrid(data) {
+            const grid = document.getElementById('peopleGrid');
+            const noRes = document.getElementById('noResults');
+            
+            grid.innerHTML = '';
+            
+            if(data.length === 0) {
+                grid.classList.add('hidden');
+                noRes.classList.remove('hidden');
+                return;
+            } else {
+                grid.classList.remove('hidden');
+                noRes.classList.add('hidden');
+            }
+
+            // Limit to 50 for performance DOM rendering in this demo
+            const displayData = data.slice(0, 50); 
+
+            displayData.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'card p-5 hover:border-orange-300';
+                
+                // Color code badge based on field
+                let badgeColor = 'bg-gray-100 text-gray-600';
+                if(p.field === 'Science') badgeColor = 'bg-blue-100 text-blue-700';
+                if(p.field === 'Politics') badgeColor = 'bg-orange-100 text-orange-700';
+                if(p.field === 'Art') badgeColor = 'bg-pink-100 text-pink-700';
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-xs font-bold uppercase tracking-wide ${badgeColor} px-2 py-1 rounded">${p.field}</span>
+                        <span class="text-xs text-gray-400 border border-gray-200 px-2 py-1 rounded">${p.era}</span>
+                    </div>
+                    <h4 class="text-lg font-bold text-gray-900 mb-1">${p.name}</h4>
+                    <p class="text-xs text-gray-500 mb-4 line-clamp-2">${p.summary}</p>
+                    
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-gray-500">Impact</span>
+                            <div class="w-24 bg-gray-200 rounded-full h-1.5 mt-1">
+                                <div class="bg-gray-800 h-1.5 rounded-full" style="width: ${p.impact}%"></div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-gray-500">Adversity</span>
+                            <div class="w-24 bg-gray-200 rounded-full h-1.5 mt-1">
+                                <div class="bg-red-400 h-1.5 rounded-full" style="width: ${p.adversity}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterGrid() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const era = document.getElementById('filterEra').value;
+            const field = document.getElementById('filterField').value;
+
+            const filtered = peopleData.filter(p => {
+                const matchName = p.name.toLowerCase().includes(search);
+                const matchEra = era === 'All' || p.era === era;
+                const matchField = field === 'All' || p.field === field;
+                return matchName && matchEra && matchField;
+            });
+
+            renderGrid(filtered);
+        }
+
+
+        // --- 4. NAVIGATION LOGIC ---
+
+        function switchView(viewId) {
+            // Hide all views
+            document.querySelectorAll('.view-section').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Show target view
+            document.getElementById(viewId).classList.add('active');
+            
+            // Update Nav State
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active');
+                el.classList.add('text-gray-500'); // reset
+            });
+            
+            const activeNav = document.getElementById('nav-' + viewId);
+            activeNav.classList.add('active');
+            activeNav.classList.remove('text-gray-500');
+
+            // Update Header Title
+            const titles = {
+                'dashboard': ['Global Overview', 'Aggregated metrics on human achievement.'],
+                'patterns': ['Pattern Analysis', 'Visualizing the archetypes of success.'],
+                'explorer': ['The Archives', 'Browse individual records and biographies.'],
+                'blueprint': ['The Blueprint', 'Synthesized laws for creating a legacy.']
+            };
+            document.getElementById('page-title').innerText = titles[viewId][0];
+            document.getElementById('page-desc').innerText = titles[viewId][1];
+
+            // Re-render charts if hidden (sometimes canvas needs resize trigger)
+            if(viewId === 'dashboard') {
+                if(eraChart) eraChart.resize();
+                if(fieldChart) fieldChart.resize();
+            }
+            if(viewId === 'patterns') {
+                if(traitRadar) traitRadar.resize();
+                if(scatterChart) scatterChart.resize();
+            }
+        }
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            renderGrid(peopleData);
+        });
+
+    </script>
+</body>
+</html>

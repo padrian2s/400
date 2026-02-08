@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patterns of Human Greatness</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface-2: #1a1a26;
+    --border: #2a2a3a;
+    --text: #e0e0e8;
+    --text-muted: #8888a0;
+    --accent: #6c63ff;
+    --accent-glow: rgba(108, 99, 255, 0.15);
+    --gold: #f0c040;
+    --gold-dim: rgba(240, 192, 64, 0.12);
+    --science: #4fc3f7;
+    --philosophy: #ce93d8;
+    --politics: #ef5350;
+    --arts: #ffb74d;
+    --business: #66bb6a;
+    --social: #f06292;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 50% 50%, var(--accent-glow) 0%, transparent 60%);
+    animation: pulse 8s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+  }
+
+  .hero-content { position: relative; z-index: 1; max-width: 800px; }
+
+  .hero h1 {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero .subtitle {
+    font-size: clamp(1rem, 2.5vw, 1.35rem);
+    color: var(--text-muted);
+    margin-bottom: 2.5rem;
+    font-weight: 400;
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 3rem;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-number {
+    font-size: 2.8rem;
+    font-weight: 800;
+    color: var(--gold);
+    display: block;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    margin-top: 0.35rem;
+  }
+
+  .scroll-indicator {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    animation: bounce 2s ease-in-out infinite;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    text-decoration: none;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(10px); }
+  }
+
+  /* ── Navigation ── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10, 10, 15, 0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 2rem;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.4rem 0.9rem;
+    border-radius: 100px;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+
+  nav a:hover {
+    color: #fff;
+    background: var(--accent-glow);
+  }
+
+  /* ── Main content ── */
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  /* ── Part headers ── */
+  .part-header {
+    padding: 6rem 0 2rem;
+    text-align: center;
+  }
+
+  .part-header .part-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+
+  .part-header h2 {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  .part-header .part-desc {
+    color: var(--text-muted);
+    margin-top: 1rem;
+    font-size: 1.05rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* ── Pattern cards ── */
+  .pattern-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    position: relative;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  .pattern-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 40px var(--accent-glow);
+  }
+
+  .pattern-number {
+    position: absolute;
+    top: -1px;
+    right: 2rem;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.35rem 0.9rem;
+    border-radius: 0 0 8px 8px;
+    letter-spacing: 0.05em;
+  }
+
+  .pattern-card h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.01em;
+  }
+
+  .appears-in {
+    font-size: 0.78rem;
+    color: var(--accent);
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+
+  .pattern-card .lead {
+    font-size: 1.05rem;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+    font-style: italic;
+    opacity: 0.9;
+  }
+
+  /* ── Domain examples grid ── */
+  .domain-examples {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .domain-example {
+    background: var(--surface-2);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    border-left: 3px solid;
+  }
+
+  .domain-example.science { border-color: var(--science); }
+  .domain-example.philosophy { border-color: var(--philosophy); }
+  .domain-example.politics { border-color: var(--politics); }
+  .domain-example.arts { border-color: var(--arts); }
+  .domain-example.business { border-color: var(--business); }
+  .domain-example.social { border-color: var(--social); }
+
+  .domain-example .domain-label {
+    font-weight: 700;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.25rem;
+  }
+
+  .domain-example.science .domain-label { color: var(--science); }
+  .domain-example.philosophy .domain-label { color: var(--philosophy); }
+  .domain-example.politics .domain-label { color: var(--politics); }
+  .domain-example.arts .domain-label { color: var(--arts); }
+  .domain-example.business .domain-label { color: var(--business); }
+  .domain-example.social .domain-label { color: var(--social); }
+
+  .why-box {
+    background: var(--surface-2);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border);
+  }
+
+  .why-box .why-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    margin-bottom: 0.5rem;
+  }
+
+  .why-box p {
+    font-size: 0.92rem;
+    line-height: 1.65;
+    color: var(--text);
+  }
+
+  .action-box {
+    background: linear-gradient(135deg, rgba(108, 99, 255, 0.08), rgba(240, 192, 64, 0.06));
+    border: 1px solid rgba(108, 99, 255, 0.2);
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    font-size: 0.92rem;
+    line-height: 1.6;
+  }
+
+  .action-box strong {
+    color: var(--accent);
+  }
+
+  /* ── Domain-specific section ── */
+  .domain-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .domain-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 2rem;
+    border-top: 3px solid;
+    transition: transform 0.2s, box-shadow 0.3s;
+  }
+
+  .domain-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  }
+
+  .domain-card.science { border-top-color: var(--science); }
+  .domain-card.philosophy { border-top-color: var(--philosophy); }
+  .domain-card.politics { border-top-color: var(--politics); }
+  .domain-card.arts { border-top-color: var(--arts); }
+  .domain-card.business { border-top-color: var(--business); }
+  .domain-card.social { border-top-color: var(--social); }
+
+  .domain-card h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+
+  .domain-card.science h3 { color: var(--science); }
+  .domain-card.philosophy h3 { color: var(--philosophy); }
+  .domain-card.politics h3 { color: var(--politics); }
+  .domain-card.arts h3 { color: var(--arts); }
+  .domain-card.business h3 { color: var(--business); }
+  .domain-card.social h3 { color: var(--social); }
+
+  .domain-card ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .domain-card li {
+    padding: 0.5rem 0;
+    font-size: 0.9rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    padding-left: 1.2rem;
+    position: relative;
+  }
+
+  .domain-card li:last-child { border-bottom: none; }
+
+  .domain-card li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-muted);
+  }
+
+  /* ── Contrarian section ── */
+  .contrarian-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 2rem 2.5rem;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid var(--gold);
+  }
+
+  .contrarian-card h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: var(--gold);
+  }
+
+  .contrarian-card p {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  /* ── Principles section ── */
+  .principles-list {
+    counter-reset: principle;
+    list-style: none;
+    padding: 0;
+  }
+
+  .principle-item {
+    counter-increment: principle;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 2rem 2.5rem 2rem 5rem;
+    margin-bottom: 1rem;
+    position: relative;
+    transition: border-color 0.3s;
+  }
+
+  .principle-item:hover {
+    border-color: var(--accent);
+  }
+
+  .principle-item::before {
+    content: counter(principle, decimal-leading-zero);
+    position: absolute;
+    left: 1.5rem;
+    top: 2rem;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--accent);
+    opacity: 0.6;
+    line-height: 1;
+  }
+
+  .principle-item strong {
+    display: block;
+    font-size: 1.1rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .principle-item p {
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  /* ── Stats table ── */
+  .stats-table-wrapper {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin: 2rem 0;
+  }
+
+  .stats-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .stats-table th {
+    text-align: left;
+    padding: 1rem 1.5rem;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stats-table td {
+    padding: 0.85rem 1.5rem;
+    font-size: 0.92rem;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+
+  .stats-table tr:last-child td {
+    border-bottom: none;
+    font-weight: 700;
+    background: rgba(108, 99, 255, 0.06);
+  }
+
+  .stats-table .domain-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 0.6rem;
+    vertical-align: middle;
+  }
+
+  /* ── Key stats grid ── */
+  .key-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 2rem 0 4rem;
+  }
+
+  .key-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  .key-stat .ks-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--accent);
+  }
+
+  .key-stat .ks-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    border-top: 1px solid var(--border);
+    margin-top: 4rem;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .container { padding: 0 1.25rem; }
+    .pattern-card { padding: 1.75rem; }
+    .domain-examples { grid-template-columns: 1fr; }
+    .domain-grid { grid-template-columns: 1fr; }
+    .stats-row { gap: 1.25rem; }
+    .stat-number { font-size: 2.2rem; }
+    .principle-item { padding-left: 4rem; }
+    nav { padding: 0.5rem 1rem; }
+    nav a { font-size: 0.72rem; padding: 0.3rem 0.65rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section class="hero" id="top">
+  <div class="hero-content">
+    <h1>Patterns of Human Greatness</h1>
+    <p class="subtitle">A cross-domain synthesis of what made history's most impactful people extraordinary</p>
+    <div class="stats-row">
+      <div class="stat">
+        <span class="stat-number">421</span>
+        <span class="stat-label">People Studied</span>
+      </div>
+      <div class="stat">
+        <span class="stat-number">6</span>
+        <span class="stat-label">Domains</span>
+      </div>
+      <div class="stat">
+        <span class="stat-number">76</span>
+        <span class="stat-label">Patterns Found</span>
+      </div>
+      <div class="stat">
+        <span class="stat-number">4,500</span>
+        <span class="stat-label">Years Covered</span>
+      </div>
+    </div>
+  </div>
+  <a href="#universal" class="scroll-indicator" aria-label="Scroll down">&#8595;</a>
+</section>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav>
+  <a href="#universal">Universal Patterns</a>
+  <a href="#domain">Domain-Specific</a>
+  <a href="#contrarian">Contrarian Findings</a>
+  <a href="#principles">Actionable Principles</a>
+  <a href="#appendix">Appendix</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════ PART I: UNIVERSAL PATTERNS ═══════════ -->
+<div class="part-header" id="universal">
+  <div class="part-label">Part I</div>
+  <h2>Universal Patterns</h2>
+  <p class="part-desc">These patterns appeared independently across all six domains. Their universality makes them the most robust findings of this research.</p>
+</div>
+
+<!-- Pattern 1 -->
+<div class="pattern-card">
+  <div class="pattern-number">PATTERN 01</div>
+  <h3>The Outsider Advantage</h3>
+  <div class="appears-in">Appears in all 6 domains</div>
+  <p class="lead">People who transformed their fields were disproportionately outsiders &mdash; by geography, class, education, or identity.</p>
+  <div class="domain-examples">
+    <div class="domain-example science"><div class="domain-label">Science</div>Faraday (no formal education), Ramanujan (self-taught), Einstein (patent clerk)</div>
+    <div class="domain-example philosophy"><div class="domain-label">Philosophy</div>Spinoza (excommunicated), Epictetus (born a slave), Kierkegaard (isolated)</div>
+    <div class="domain-example politics"><div class="domain-label">Politics</div>Napoleon (Corsican), Catherine the Great (German in Russia), Genghis Khan (orphan)</div>
+    <div class="domain-example arts"><div class="domain-label">Arts</div>Shakespeare (no university), Dostoevsky (convict), Armstrong (extreme poverty)</div>
+    <div class="domain-example business"><div class="domain-label">Business</div>Carnegie (immigrant child laborer), Honda (blacksmith's son), Oprah (born into poverty)</div>
+    <div class="domain-example social"><div class="domain-label">Social Reform</div>Douglass (escaped slave), Gandhi (colonial subject), Malala (Taliban territory)</div>
+  </div>
+  <div class="why-box">
+    <div class="why-label">Why It Works</div>
+    <p>Outsiders are free from the assumptions insiders absorb unconsciously. They see the system clearly because they had to learn it deliberately. They combine hunger with perspective. The most dangerous expert is often the one most embedded in existing paradigms.</p>
+  </div>
+  <div class="action-box"><strong>Actionable:</strong> Cultivate outsider perspectives deliberately. If you're an insider, seek input from people outside your field. If you're an outsider, recognize your perspective as an asset, not a liability.</div>
+</div>
+
+<!-- Pattern 2 -->
+<div class="pattern-card">
+  <div class="pattern-number">PATTERN 02</div>
+  <h3>Adversity as Crucible</h3>
+  <div class="appears-in">Appears in all 6 domains &mdash; ~85% of figures experienced significant hardship</div>
+  <p class="lead">The correlation between early adversity and later greatness is so strong it cannot be coincidental.</p>
+  <div class="domain-examples">
+    <div class="domain-example science"><div class="domain-label">Science</div>85% faced significant personal adversity. Curie processed tons of pitchblende by hand.</div>
+    <div class="domain-example philosophy"><div class="domain-label">Philosophy</div>Exile (Confucius, Marx, Arendt), persecution (Spinoza), poverty (Socrates)</div>
+    <div class="domain-example politics"><div class="domain-label">Politics</div>Lincoln (frontier poverty), Mandela (27 years imprisoned), Genghis Khan (enslaved)</div>
+    <div class="domain-example arts"><div class="domain-label">Arts</div>Van Gogh (mental illness), Beethoven (deafness), Dickens (child factory labor)</div>
+    <div class="domain-example business"><div class="domain-label">Business</div>Ford had two failed companies. Disney went bankrupt. Tesla was days from bankruptcy.</div>
+    <div class="domain-example social"><div class="domain-label">Social Reform</div>MLK (assassination), Tubman (slavery), Nightingale (family opposition)</div>
+  </div>
+  <div class="why-box">
+    <div class="why-label">Why It Works</div>
+    <p>Adversity builds resilience, eliminates illusions, and creates the hunger to change things. It also acts as a selection mechanism. The critical nuance: adversity is not <em>sufficient</em> &mdash; the difference is the capacity to <strong>transmute</strong> suffering into insight, art, or action.</p>
+  </div>
+  <div class="action-box"><strong>Actionable:</strong> Don't avoid difficulty &mdash; metabolize it. The formula is: adversity + extraordinary talent + determination = breakthrough.</div>
+</div>
+
+<!-- Pattern 3 -->
+<div class="pattern-card">
+  <div class="pattern-number">PATTERN 03</div>
+  <h3>The Power of Timing</h3>
+  <div class="appears-in">Appears in all 6 domains</div>
+  <p class="lead">Being right at the wrong time is nearly as useless as being wrong.</p>
+  <div class="domain-examples">
+    <div class="domain-example science"><div class="domain-label">Science</div>Mendel published too early &mdash; ignored for 34 years. Copernicus delayed until his deathbed.</div>
+    <div class="domain-example philosophy"><div class="domain-label">Philosophy</div>Ideas addressing civilizational crises had amplified impact (Plato after Athens's defeat)</div>
+    <div class="domain-example politics"><div class="domain-label">Politics</div>Churchill was a disaster in peacetime but perfect for 1940. Gorbachev came too late.</div>
+    <div class="domain-example arts"><div class="domain-label">Arts</div>Van Gogh sold one painting. Bach was considered old-fashioned at death.</div>
+    <div class="domain-example business"><div class="domain-label">Business</div>Rockefeller didn't discover oil. Ford didn't invent the car. Timing + execution wins.</div>
+    <div class="domain-example social"><div class="domain-label">Social Reform</div>Every major reform required cultural readiness &mdash; the right person at the right moment.</div>
+  </div>
+  <div class="why-box">
+    <div class="why-label">Why It Works</div>
+    <p>Ideas exist in a cultural ecosystem that must be ready to receive them. The skill is not just having the right idea but recognizing when conditions make it actionable.</p>
+  </div>
+  <div class="action-box"><strong>Actionable:</strong> Before asking "Is this a good idea?" ask "Is this the right time for this idea?"</div>
+</div>
+
+<!-- Pattern 4 -->
+<div class="pattern-card">
+  <div class="pattern-number">PATTERN 04</div>
+  <h3>Building on Predecessors While Breaking with Them</h3>
+  <div class="appears-in">Appears in all 6 domains</div>
+  <p class="lead">No one created from nothing. Every revolutionary absorbed deeply what came before, then broke with it.</p>
+  <div class="domain-examples">
+    <div class="domain-example science"><div class="domain-label">Science</div>Newton: "If I have seen further, it is by standing on the shoulders of giants"</div>
+    <div class="domain-example philosophy"><div class="domain-label">Philosophy</div>Aristotle critiqued Plato. Kant responded to Hume. Marx inverted Hegel.</div>
+    <div class="domain-example arts"><div class="domain-label">Arts</div>Picasso could draw like Raphael before inventing Cubism. Stravinsky mastered tradition first.</div>
+    <div class="domain-example social"><div class="domain-label">Social Reform</div>MLK studied Gandhi, who studied Thoreau, who studied ancient philosophy.</div>
+  </div>
+  <div class="why-box">
+    <div class="why-label">Why It Works</div>
+    <p>The most radical breaks are made by those who understand tradition most deeply. Those who merely reject tradition without understanding it produce novelty, not innovation.</p>
+  </div>
+  <div class="action-box"><strong>Actionable:</strong> Master the existing tradition before trying to overthrow it. The chain &mdash; absorb, critique, transform &mdash; is how genuine progress works.</div>
+</div>
+
+<!-- Pattern 5 -->
+<div class="pattern-card">
+  <div class="pattern-number">PATTERN 05</div>
+  <h3>Institutional Building Outlasts Individual Achievement</h3>
+  <div class="appears-in">Appears in all 6 domains</div>
+  <p class="lead">The most enduring impact comes not from individual works but from institutions that transmit and extend them.</p>
+  <div class="domain-examples">
+    <div class="domain-example science"><div class="domain-label">Science</div>Rutherford's Cavendish Lab produced 11 Nobel laureates. Baghdad's House of Wisdom.</div>
+    <div class="domain-example philosophy"><div class="domain-label">Philosophy</div>Plato's Academy, Aristotle's Lyceum, the Buddha's Sangha &mdash; ideas in institutions outlast texts.</div>
+    <div class="domain-example politics"><div class="domain-label">Politics</div>Augustus's Principate lasted 1,500 years. Qin Shi Huang's state defined China for 2,000.</div>
+    <div class="domain-example business"><div class="domain-label">Business</div>Philosophy-driven companies (Tata, Matsushita) outlive personality-driven ones.</div>
+  </div>
+  <div class="why-box">
+    <div class="why-label">Why It Works</div>
+    <p>Individual energy is finite. Institutions embody solutions to recurring problems in ways that outlast any person, creating self-reinforcing cycles of transmission, development, and renewal.</p>
+  </div>
+  <div class="action-box"><strong>Actionable:</strong> Build systems, not just products. The question is not "What can I do?" but "What can I create that continues without me?"</div>
+</div>
+
+<!-- Pattern 6 -->
+<div class="pattern-card">
+  <div class="pattern-number">PATTERN 06</div>
+  <h3>The Teacher-Student Chain</h3>
+  <div class="appears-in">Appears in all 6 domains</div>
+  <p class="lead">Greatness is rarely spontaneous &mdash; it emerges from chains of personal transmission.</p>
+  <div class="domain-examples">
+    <div class="domain-example science"><div class="domain-label">Science</div>Rutherford mentored 11 Nobel laureates. Bohr nurtured Heisenberg and Dirac.</div>
+    <div class="domain-example philosophy"><div class="domain-label">Philosophy</div>Socrates &rarr; Plato &rarr; Aristotle. Traditions spanning 2,500 years.</div>
+    <div class="domain-example arts"><div class="domain-label">Arts</div>Verrocchio &rarr; Leonardo. Rimsky-Korsakov &rarr; Stravinsky. Haydn &rarr; Beethoven.</div>
+    <div class="domain-example business"><div class="domain-label">Business</div>Honda had Fujisawa. Jobs had Cook. Disney had Roy. The founder-operator partnership.</div>
+  </div>
+  <div class="why-box">
+    <div class="why-label">Why It Works</div>
+    <p>Books preserve ideas; teachers make them live. The master-student bond creates both loyalty and creative rebellion &mdash; ensuring continuity and innovation simultaneously.</p>
+  </div>
+  <div class="action-box"><strong>Actionable:</strong> Find mentors deliberately. Become a mentor generously. The chain of transmission is how civilizations advance.</div>
+</div>
+
+<!-- Pattern 7 -->
+<div class="pattern-card">
+  <div class="pattern-number">PATTERN 07</div>
+  <h3>Prolificacy and Persistent Output</h3>
+  <div class="appears-in">Appears in all 6 domains</div>
+  <p class="lead">The most enduring figures were almost always extraordinarily prolific.</p>
+  <div class="domain-examples">
+    <div class="domain-example science"><div class="domain-label">Science</div>Euler: 886 papers (including after going blind). Edison: 1,093 patents.</div>
+    <div class="domain-example arts"><div class="domain-label">Arts</div>Picasso: ~50,000 works. Bach: 1,100+ compositions. Shakespeare: 37 plays.</div>
+    <div class="domain-example business"><div class="domain-label">Business</div>Serial ventures: Vanderbilt moved from ferries &rarr; steamships &rarr; railroads.</div>
+    <div class="domain-example social"><div class="domain-label">Social Reform</div>MLK gave thousands of speeches. Nightingale wrote 14,000+ letters.</div>
+  </div>
+  <div class="why-box">
+    <div class="why-label">Why It Works</div>
+    <p>Volume creates more opportunities for breakthroughs. Most works are merely good &mdash; masterpieces emerge from the bulk. Constant production develops craft and keeps the creative engine running.</p>
+  </div>
+  <div class="action-box"><strong>Actionable:</strong> Ship more. Produce more. The masterpiece hides somewhere in the volume.</div>
+</div>
+
+<!-- Pattern 8 -->
+<div class="pattern-card">
+  <div class="pattern-number">PATTERN 08</div>
+  <h3>The Synthesis Imperative &mdash; Combining Opposites</h3>
+  <div class="appears-in">Appears in all 6 domains</div>
+  <p class="lead">The most transformative figures found ways to synthesize what seemed irreconcilable.</p>
+  <div class="domain-examples">
+    <div class="domain-example science"><div class="domain-label">Science</div>Shannon combined Boolean algebra with circuit design. Maxwell bridged fields.</div>
+    <div class="domain-example philosophy"><div class="domain-label">Philosophy</div>Aquinas (faith + reason), Kant (rationalism + empiricism), Buddha (the Middle Way)</div>
+    <div class="domain-example politics"><div class="domain-label">Politics</div>The Paradox of Mercy and Ruthlessness &mdash; Cyrus, Saladin, Lincoln combined both.</div>
+    <div class="domain-example business"><div class="domain-label">Business</div>Cross-cultural pollination &mdash; outsiders combine practices from multiple traditions.</div>
+  </div>
+  <div class="why-box">
+    <div class="why-label">Why It Works</div>
+    <p>Reality is complex and rarely captured by a single perspective. Those who transcend binary thinking and find a "third way" create frameworks more useful than either pole alone.</p>
+  </div>
+</div>
+
+<!-- Pattern 9 -->
+<div class="pattern-card">
+  <div class="pattern-number">PATTERN 09</div>
+  <h3>Posthumous Vindication &mdash; Recognition Often Comes Late</h3>
+  <div class="appears-in">Appears in all 6 domains</div>
+  <p class="lead">Original thinking routinely exceeds its audience's capacity for comprehension.</p>
+  <div class="domain-examples">
+    <div class="domain-example science"><div class="domain-label">Science</div>Mendel ignored 34 years. McClintock rejected 30 years. Boltzmann resisted.</div>
+    <div class="domain-example philosophy"><div class="domain-label">Philosophy</div>Schopenhauer lectured to empty rooms. Nietzsche had no readers while sane.</div>
+    <div class="domain-example arts"><div class="domain-label">Arts</div>Van Gogh sold one painting. Kafka instructed work burned. Vermeer forgotten 200 years.</div>
+    <div class="domain-example social"><div class="domain-label">Social Reform</div>Most reformers were persecuted before being vindicated.</div>
+  </div>
+  <div class="why-box">
+    <div class="why-label">Why It Works</div>
+    <p>The most original ideas are too far ahead of their cultural moment. What is revolutionary is by definition not yet accepted. The median delay between a paradigm-shifting idea and its acceptance is 10&ndash;30 years.</p>
+  </div>
+  <div class="action-box"><strong>Actionable:</strong> Persistence in the face of rejection is not just a character trait; it is a prerequisite for any revolutionary contribution.</div>
+</div>
+
+<!-- Pattern 10 -->
+<div class="pattern-card">
+  <div class="pattern-number">PATTERN 10</div>
+  <h3>Narrative Power &mdash; Controlling the Story</h3>
+  <div class="appears-in">Appears in all 6 domains</div>
+  <p class="lead">Those who shaped how their work was understood had amplified and lasting impact.</p>
+  <div class="domain-examples">
+    <div class="domain-example science"><div class="domain-label">Science</div>Sagan, Hawking, Feynman &mdash; communicating science ensured broader influence.</div>
+    <div class="domain-example philosophy"><div class="domain-label">Philosophy</div>Plato's dialogues, Nietzsche's aphorisms, Camus's novels &mdash; literary quality carries ideas.</div>
+    <div class="domain-example politics"><div class="domain-label">Politics</div>Lincoln's Gettysburg Address, Churchill's speeches, Gandhi's salt march.</div>
+    <div class="domain-example business"><div class="domain-label">Business</div>Carnegie's "Gospel of Wealth," Jobs's product narratives. Philosophy scales; charisma doesn't.</div>
+  </div>
+  <div class="why-box">
+    <div class="why-label">Why It Works</div>
+    <p>Human beings organize reality through stories. Whoever controls the narrative controls how actions are interpreted, sacrifices are justified, and movements are sustained.</p>
+  </div>
+  <div class="action-box"><strong>Actionable:</strong> Learn to communicate at multiple levels &mdash; accessible to general audiences but rewarding deep engagement. Literary quality carries ideas across centuries.</div>
+</div>
+
+<!-- ═══════════ PART II: DOMAIN-SPECIFIC ═══════════ -->
+<div class="part-header" id="domain">
+  <div class="part-label">Part II</div>
+  <h2>Domain-Specific Patterns</h2>
+  <p class="part-desc">Patterns unique to each field that reveal the particular dynamics of different forms of human achievement.</p>
+</div>
+
+<div class="domain-grid">
+  <div class="domain-card science">
+    <h3>Science &amp; Technology</h3>
+    <ul>
+      <li>Young peaks in math/physics (20s), late blooming in biology/engineering (40s&ndash;50s+)</li>
+      <li>Tool-making and instrument building as drivers of discovery</li>
+      <li>The "prepared mind" &mdash; breakthroughs come during incubation after intense work</li>
+      <li>Productive pairs outperform lone geniuses for implementation</li>
+    </ul>
+  </div>
+  <div class="domain-card philosophy">
+    <h3>Philosophy &amp; Religion</h3>
+    <ul>
+      <li>The renunciation pattern &mdash; giving up status for credibility (Buddha, Socrates, Wittgenstein)</li>
+      <li>Writing for multiple audiences (esoteric/exoteric split)</li>
+      <li>Productive tension with power &mdash; neither too close nor too far</li>
+      <li>Method outlasts conclusions (Socratic method, Cartesian doubt, dialectics)</li>
+    </ul>
+  </div>
+  <div class="domain-card politics">
+    <h3>Politics &amp; Military</h3>
+    <ul>
+      <li>The indirect approach &mdash; winning through positioning, patience, asymmetry</li>
+      <li>Knowing when to stop &mdash; the difference between greatness and catastrophe</li>
+      <li>Voluntary surrender of power (Washington, Mandela) as the rarest, most impactful act</li>
+      <li>Coalition management &gt; individual brilliance</li>
+    </ul>
+  </div>
+  <div class="domain-card arts">
+    <h3>Arts &amp; Literature</h3>
+    <ul>
+      <li>Two valid creative paths &mdash; obsessive revision vs. spontaneous generation</li>
+      <li>Serial reinvention correlates with longevity (Picasso, Dylan, Miles Davis)</li>
+      <li>Constraints breed creativity (Chopin: only piano; Austen: "3 or 4 families")</li>
+      <li>Masterworks emerge from crisis &mdash; extreme pressure + sufficient skill</li>
+    </ul>
+  </div>
+  <div class="domain-card business">
+    <h3>Business &amp; Economics</h3>
+    <ul>
+      <li>Frugality as competitive weapon (Walton, Buffett, Kamprad, Bezos)</li>
+      <li>Infrastructure beats products &mdash; own the layer everyone builds on</li>
+      <li>Timing + execution &gt; pure invention</li>
+      <li>The concentration/distribution pendulum oscillates perpetually</li>
+    </ul>
+  </div>
+  <div class="domain-card social">
+    <h3>Social Reform &amp; Exploration</h3>
+    <ul>
+      <li>Personal transformation moments as catalysts for activism</li>
+      <li>New communication technologies amplify reform (printing press &rarr; social media)</li>
+      <li>Privilege as accelerant &mdash; insider-outsider dynamic</li>
+      <li>The moral arc bends, but not automatically &mdash; it requires sustained effort</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════ PART III: CONTRARIAN FINDINGS ═══════════ -->
+<div class="part-header" id="contrarian">
+  <div class="part-label">Part III</div>
+  <h2>Contrarian Findings</h2>
+  <p class="part-desc">Things this research reveals that challenge conventional wisdom.</p>
+</div>
+
+<div class="contrarian-card">
+  <h3>1. "Follow Your Passion" Is Incomplete</h3>
+  <p>Most of these 421 people didn't follow a pre-existing passion. They <strong>developed</strong> passion through deep engagement with problems. Faraday didn't dream of electromagnetism as a child. The real pattern is: engagement &rarr; skill &rarr; passion, not: passion &rarr; engagement &rarr; skill.</p>
+</div>
+
+<div class="contrarian-card">
+  <h3>2. Collaboration Is Underrated, Lone Genius Is Overrated</h3>
+  <p>The myth of the solitary genius is just that &mdash; a myth. Most breakthroughs involved partnerships (Watson &amp; Crick), small groups (Manhattan Project), or rich institutional ecosystems (Rutherford's Cavendish). Even apparently solo figures relied heavily on correspondents, critics, and mentors.</p>
+</div>
+
+<div class="contrarian-card">
+  <h3>3. Failure Is Not a Detour &mdash; It Is the Training Ground</h3>
+  <p>Across all domains, failure preceded success so reliably that its absence should be viewed as suspicious. The critical variable is not avoiding failure but having the resilience to try again. Almost no major achievement was built on the first attempt.</p>
+</div>
+
+<div class="contrarian-card">
+  <h3>4. Generalists Outperform Specialists for Breakthroughs</h3>
+  <p>The most revolutionary contributions came disproportionately from polymaths and field-switchers who connected ideas across domains. Deep specialization produces incremental progress; cross-domain synthesis produces revolutions.</p>
+</div>
+
+<div class="contrarian-card">
+  <h3>5. Age Is Domain-Dependent, Not Universal</h3>
+  <p>There is no universal "peak age." Mathematics peaks early (20s). Political leadership peaks late (50s&ndash;60s). Business has no age pattern at all. The youth-obsessed culture misapplies a narrow pattern from theoretical physics to all of human endeavor.</p>
+</div>
+
+<div class="contrarian-card">
+  <h3>6. Comfort Is the Enemy of Greatness</h3>
+  <p>Almost none of these 421 people achieved their defining work while comfortable. Disruption &mdash; whether chosen (Thoreau's Walden) or imposed (exile, poverty, illness) &mdash; precedes the most important contributions. Comfort breeds complacency; constraint breeds creativity.</p>
+</div>
+
+<!-- ═══════════ PART IV: ACTIONABLE PRINCIPLES ═══════════ -->
+<div class="part-header" id="principles">
+  <div class="part-label">Part IV</div>
+  <h2>10 Actionable Principles</h2>
+  <p class="part-desc">Distilled from 421 lives across all domains &mdash; principles anyone can apply today.</p>
+</div>
+
+<ol class="principles-list">
+  <li class="principle-item">
+    <strong>Master before you innovate.</strong>
+    <p>Learn the tradition deeply, then break with it. Innovation without mastery is mere novelty.</p>
+  </li>
+  <li class="principle-item">
+    <strong>Ship constantly.</strong>
+    <p>Volume is your friend. Most works are merely good; masterpieces emerge from the bulk. Perfectionism kills more greatness than mediocrity does.</p>
+  </li>
+  <li class="principle-item">
+    <strong>Cultivate outsider perspectives.</strong>
+    <p>If you're an insider, deliberately seek input from outsiders. If you're an outsider, recognize your fresh perspective as your greatest asset.</p>
+  </li>
+  <li class="principle-item">
+    <strong>Build for transmission.</strong>
+    <p>Create systems, institutions, or teachings that can continue without you. Individual achievement is ephemeral; institutional innovation is permanent.</p>
+  </li>
+  <li class="principle-item">
+    <strong>Embrace the crucible.</strong>
+    <p>Don't avoid difficulty &mdash; metabolize it. Every person in this study who achieved lasting impact learned to convert adversity into fuel.</p>
+  </li>
+  <li class="principle-item">
+    <strong>Connect across domains.</strong>
+    <p>The most revolutionary insights come from combining ideas from different fields. Read widely. Talk to people outside your discipline. Be a synthesizer.</p>
+  </li>
+  <li class="principle-item">
+    <strong>Control your narrative.</strong>
+    <p>Communicate at multiple levels &mdash; accessible to general audiences but rewarding deep engagement. Literary quality carries ideas across centuries.</p>
+  </li>
+  <li class="principle-item">
+    <strong>Find your complementary partner.</strong>
+    <p>The visionary-executor partnership appears in every domain. Find someone whose strengths compensate for your weaknesses.</p>
+  </li>
+  <li class="principle-item">
+    <strong>Read the timing.</strong>
+    <p>Before asking "Is this right?" ask "Is this the right moment?" Being right too early is nearly as useless as being wrong.</p>
+  </li>
+  <li class="principle-item">
+    <strong>Persist beyond rejection.</strong>
+    <p>The median delay between a paradigm-shifting idea and its acceptance is 10&ndash;30 years. If everyone agrees with you immediately, you probably aren't saying anything very new.</p>
+  </li>
+</ol>
+
+<!-- ═══════════ APPENDIX ═══════════ -->
+<div class="part-header" id="appendix">
+  <div class="part-label">Appendix</div>
+  <h2>Research Statistics</h2>
+</div>
+
+<div class="stats-table-wrapper">
+  <table class="stats-table">
+    <thead>
+      <tr>
+        <th>Domain</th>
+        <th>Figures Studied</th>
+        <th>Patterns Found</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="domain-dot" style="background:var(--science)"></span>Science &amp; Technology</td>
+        <td>67</td>
+        <td>13</td>
+      </tr>
+      <tr>
+        <td><span class="domain-dot" style="background:var(--philosophy)"></span>Philosophy &amp; Religion</td>
+        <td>69</td>
+        <td>12</td>
+      </tr>
+      <tr>
+        <td><span class="domain-dot" style="background:var(--politics)"></span>Politics &amp; Military</td>
+        <td>67</td>
+        <td>12</td>
+      </tr>
+      <tr>
+        <td><span class="domain-dot" style="background:var(--arts)"></span>Arts &amp; Literature</td>
+        <td>70</td>
+        <td>13</td>
+      </tr>
+      <tr>
+        <td><span class="domain-dot" style="background:var(--business)"></span>Business &amp; Economics</td>
+        <td>75</td>
+        <td>12</td>
+      </tr>
+      <tr>
+        <td><span class="domain-dot" style="background:var(--social)"></span>Social Reform &amp; Exploration</td>
+        <td>73</td>
+        <td>14</td>
+      </tr>
+      <tr>
+        <td>Total</td>
+        <td>421</td>
+        <td>76</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="key-stats">
+  <div class="key-stat">
+    <div class="ks-value">10</div>
+    <div class="ks-label">Universal Patterns</div>
+  </div>
+  <div class="key-stat">
+    <div class="ks-value">24</div>
+    <div class="ks-label">Domain-Specific Patterns</div>
+  </div>
+  <div class="key-stat">
+    <div class="ks-value">6</div>
+    <div class="ks-label">Contrarian Findings</div>
+  </div>
+  <div class="key-stat">
+    <div class="ks-value">~4,500 yrs</div>
+    <div class="ks-label">Time Span Covered</div>
+  </div>
+</div>
+
+</div><!-- /.container -->
+
+<footer>
+  <p>Synthesized February 2026 from six parallel domain research studies covering every inhabited continent.</p>
+  <p style="margin-top:0.5rem; font-size:0.72rem; opacity:0.5;">~15% female representation reflects historical access, not capacity.</p>
+</footer>
+
+</body>
+</html>
